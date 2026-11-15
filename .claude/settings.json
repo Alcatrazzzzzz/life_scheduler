@@ -1,0 +1,64 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet format:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm run test:*)",
+      "Bash(playwright-cli open:*)",
+      "Bash(playwright-cli snapshot:*)",
+      "Bash(playwright-cli click:*)",
+      "Bash(playwright-cli fill:*)",
+      "Bash(playwright-cli type:*)",
+      "Bash(playwright-cli press:*)",
+      "Bash(playwright-cli screenshot:*)",
+      "Bash(playwright-cli close:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(dotnet ef database drop:*)",
+      "Bash(git push --force:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "dotnet build --no-restore -v quiet",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd src/Web && npm run typecheck --silent",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy", "Bypass",
+              "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/save-session-log.ps1"
+            ],
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
