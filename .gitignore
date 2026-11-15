@@ -1,2 +1,86 @@
-# Playwright CLI output (may contain credentials)
-.playwright-cli/
+# ============================================
+# .NET
+# ============================================
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test results
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.json
+coverage*.xml
+coverage*.info
+coverage*.coverage
+coverage*.coveragexml
+
+# ============================================
+# Node / React / Vite
+# ============================================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Env
+.env
+.env.*
+!.env.example
+
+# ============================================
+# Playwright
+# ============================================
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+.playwright/
+*.webm
+*.png.bak
+
+# ============================================
+# Claude Code
+# ============================================
+# Локальные переопределения — не коммитим
+.claude/settings.local.json
+
+# Логи сессий — коммитим, это часть памяти проекта
+# (не добавляй сюда docs/sessions/)
+
+# Кеш и временные файлы Claude Code
+.claude/cache/
+.claude/logs/
+
+# ============================================
+# IDE / Editors
+# ============================================
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# ============================================
+# OS
+# ============================================
+.DS_Store
+Thumbs.db
+desktop.ini

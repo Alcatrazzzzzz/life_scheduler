@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LifeScheduler.Api/LifeScheduler.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LifeScheduler.Tests/LifeScheduler.Tests.csproj" />
+  </Folder>
+</Solution>
