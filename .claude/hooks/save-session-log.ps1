@@ -1,4 +1,11 @@
-﻿$raw = [Console]::In.ReadToEnd()
+﻿# save-session-log.ps1
+# Читает stdin как UTF-8, независимо от кодовой страницы консоли Windows.
+
+$stdin = [Console]::OpenStandardInput()
+$reader = New-Object System.IO.StreamReader($stdin, [System.Text.Encoding]::UTF8)
+$raw = $reader.ReadToEnd()
+$reader.Close()
+
 if (-not $raw) { exit 0 }
 
 try {
@@ -16,6 +23,12 @@ $dir = "docs/sessions"
 $file = Join-Path $dir "$date-$time.md"
 
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
-"# Сессия $date $time`n`n$summary" | Set-Content -Path $file -Encoding UTF8
+$content = "# Сессия $date $time`n`n$summary"
+
+# WriteAllText по умолчанию пишет UTF-8 без BOM.
+[System.IO.File]::WriteAllText(
+    (Join-Path (Get-Location) $file),
+    $content
+)
 
 exit 0
