@@ -4,14 +4,14 @@
 
 ## Стек
 
-- Бэкенд: .NET 10, Minimal APIs, вертикальные срезы в `src/Features/{Feature}/`
+- Бэкенд: .NET 10, Minimal APIs, вертикальные срезы в `src/LifeScheduler.Api/Features/{Feature}/`
 - Фронтенд: React 19 + TypeScript strict, Vite, TanStack Query
 - Тесты: xUnit (бэкенд), Vitest + Playwright (фронтенд/E2E)
 
 ## Структура
 
-- Бэкенд: вертикальные срезы в `src/Features/{Feature}/`. Каждый срез владеет эндпоинтом, моделями запроса/ответа, handler'ом и валидацией — всё в одной папке.
-- Никакого общего слоя controller/service/repository между фичами. Cross-cutting код идёт в `src/Shared/`, никогда внутрь `src/Features/`.
+- Бэкенд: вертикальные срезы в `src/LifeScheduler.Api/Features/{Feature}/`. Каждый срез владеет эндпоинтом, моделями запроса/ответа, handler'ом и валидацией — всё в одной папке.
+- Никакого общего слоя controller/service/repository между фичами. Cross-cutting код идёт в `src/LifeScheduler.Api/Shared/`, никогда внутрь `src/LifeScheduler.Api/Features/{Feature}/`.
 - Регистрируй эндпоинты через `MapGroup` в одном файле на фичу (например, `ScheduleEndpoints.cs`).
 - Фронтенд: всё серверное состояние через TanStack Query. Никакого `useEffect`-фетчинга, никакого параллельного кэша в компонентах.
 
@@ -33,7 +33,7 @@
 ## Особенности окружения
 
 - `dotnet` должен быть в PATH через `~/.dotnet`.
-- Фронтенд проксирует `/api` на `https://localhost:7xxx`; не меняй `vite.config` без запроса. (TODO: замени `7xxx` на реальный порт из `launchSettings.json`)
+- Фронтенд проксирует `/api` на `http://localhost:5148`; не меняй `vite.config` без запроса.
 
 ## Документация
 
