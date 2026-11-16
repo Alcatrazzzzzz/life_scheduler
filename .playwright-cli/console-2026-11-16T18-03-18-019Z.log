@@ -1,0 +1,3 @@
+[     182ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=aa35aa5f:15802
+[   38101ms] [ERROR] Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://localhost:5173/api/schedules:1
+[   45088ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=aa35aa5f:15802

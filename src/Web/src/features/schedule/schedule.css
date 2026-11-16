@@ -1,0 +1,104 @@
+.schedule-page {
+  padding: 24px 32px 48px;
+  text-align: left;
+}
+
+.schedule-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .schedule-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.schedule-form,
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schedule-form label,
+.schedule-filter label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.schedule-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.schedule-form input,
+.schedule-form textarea,
+.schedule-filter input {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.schedule-form button {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: 4px;
+  background: var(--accent-bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.schedule-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.schedule-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.schedule-list th,
+.schedule-list td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.schedule-list th {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.schedule-list td:last-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.schedule-list td button {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.schedule-error {
+  color: #c0392b;
+  font-size: 14px;
+}

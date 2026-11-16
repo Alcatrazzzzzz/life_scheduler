@@ -26,11 +26,11 @@
 - `dotnet test --filter "FullyQualifiedName~Features.Schedule"` — тесты одной фичи (замени `Schedule` на целевую фичу; фильтр по `~Schedule` матчит всё, т.к. в имени сборки есть `LifeScheduler`)
 - `dotnet format --verify-no-changes` — CI-гейт
 - `cd src/Web && npm run build` — сборка фронтенда (`tsc -b && vite build`)
+- `cd src/Web && npm run typecheck` — проверка типов без сборки (`tsc -b --noEmit`, composite project references)
 - `cd src/Web && npm run lint` — ESLint
 
 Планируемые (сейчас НЕ определены в `src/Web/package.json` — добавь перед использованием):
 
-- `npm run typecheck` — строгая проверка TypeScript (`tsc --noEmit`)
 - `npm run test -- --run` — однократный прогон Vitest
 - `npm run e2e -- --grep "<pattern>"` — E2E по паттерну (имя сценария — из `test(...)` в `tests/*.spec.ts`)
 
@@ -54,8 +54,7 @@ EF Core (SQLite, `dotnet-ef` — локальный tool в `.config/dotnet-tool
 
 ## Известные пробелы
 
-- `src/Web/package.json` не содержит скриптов `typecheck` / `test` / `e2e` — добавь их, прежде чем ссылаться на эти команды.
-- В `src/Web/tsconfig.app.json` нет `"strict": true`, хотя соглашение требует strict TypeScript.
+- `src/Web/package.json` не содержит скриптов `test` / `e2e` — добавь их, прежде чем ссылаться на эти команды.
 - Нет `Directory.Build.props` — общие настройки сборки (Nullable, LangVersion, TreatWarningsAsErrors) пока не централизованы.
 
 ## Документация
