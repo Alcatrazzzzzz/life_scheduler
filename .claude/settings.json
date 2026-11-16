@@ -1,4 +1,10 @@
 {
+  "env": {
+    "ENABLE_LSP_TOOL": "1"
+  },
+  "enabledPlugins": {
+    "csharp-lsp@claude-plugins-official": true
+  },
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",

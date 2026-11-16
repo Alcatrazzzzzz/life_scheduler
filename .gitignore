@@ -13,6 +13,11 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
 
+# SQLite dev-база
+*.db
+*.db-shm
+*.db-wal
+
 # Test results
 [Tt]est[Rr]esult*/
 *.trx
