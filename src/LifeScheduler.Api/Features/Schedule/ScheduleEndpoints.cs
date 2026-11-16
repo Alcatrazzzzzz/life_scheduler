@@ -8,5 +8,8 @@ public static class ScheduleEndpoints
 
         group.MapPost("/", CreateSchedule.Handle);
         group.MapGet("/", ListSchedule.Handle);
+        group.MapGet("/{id:guid}", GetSchedule.Handle);
+        group.MapPut("/{id:guid}", UpdateSchedule.Handle);
+        group.MapDelete("/{id:guid}", DeleteSchedule.Handle);
     }
 }
