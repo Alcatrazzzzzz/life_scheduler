@@ -29,9 +29,9 @@ export function ScheduleList() {
 
       {schedules.isPending && <p>Загрузка…</p>}
       {schedules.isError && <p className="schedule-error">{schedules.error.message}</p>}
-      {schedules.isSuccess && schedules.data.length === 0 && <p>Записей нет.</p>}
+      {schedules.data?.length === 0 && <p>Записей нет.</p>}
 
-      {schedules.isSuccess && schedules.data.length > 0 && (
+      {schedules.data && schedules.data.length > 0 && (
         <table>
           <thead>
             <tr>
