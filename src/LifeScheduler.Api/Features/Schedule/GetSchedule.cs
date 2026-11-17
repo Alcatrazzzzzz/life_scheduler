@@ -13,7 +13,8 @@ public static class GetSchedule
         TimeOnly? Start,
         TimeOnly? End,
         string? Notes,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt,
+        ScheduleRecurrence Recurrence);
 
     public static async Task<Results<Ok<Response>, NotFound>> Handle(
         Guid id,
@@ -24,7 +25,7 @@ public static class GetSchedule
             .AsNoTracking()
             .Where(e => e.Id == id)
             .Select(e => new Response(
-                e.Id, e.Title, e.Date, e.Start, e.End, e.Notes, e.CreatedAt))
+                e.Id, e.Title, e.Date, e.Start, e.End, e.Notes, e.CreatedAt, e.Recurrence))
             .FirstOrDefaultAsync(ct);
 
         if (response is null)

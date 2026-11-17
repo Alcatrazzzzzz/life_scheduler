@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import type { ScheduleRecurrence } from '../api'
 import { useCreateSchedule } from '../queries'
 import { Modal } from './Modal'
 
@@ -15,6 +16,7 @@ interface FormState {
   end: string
   notes: string
   untimed: boolean
+  recurrence: ScheduleRecurrence
 }
 
 interface CreateScheduleDialogProps {
@@ -30,7 +32,12 @@ function formFromDraft(draft: CreateDraft): FormState {
     end: draft.end ?? '',
     notes: '',
     untimed: draft.start === null,
+    recurrence: 'none',
   }
+}
+
+function isRecurrence(value: string): value is ScheduleRecurrence {
+  return value === 'none' || value === 'daily' || value === 'weekly'
 }
 
 export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogProps) {
@@ -53,6 +60,7 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
         start: form.untimed ? null : form.start,
         end: form.untimed ? null : form.end,
         notes: notes.length > 0 ? notes : undefined,
+        recurrence: form.recurrence,
       },
       { onSuccess: onClose },
     )
@@ -112,6 +120,20 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
             </label>
           </div>
         )}
+
+        <label>
+          Повторение
+          <select
+            value={form.recurrence}
+            onChange={(e) => {
+              if (isRecurrence(e.target.value)) update('recurrence', e.target.value)
+            }}
+          >
+            <option value="none">Не повторять</option>
+            <option value="daily">Каждый день</option>
+            <option value="weekly">Каждую неделю</option>
+          </select>
+        </label>
 
         <label>
           Заметки

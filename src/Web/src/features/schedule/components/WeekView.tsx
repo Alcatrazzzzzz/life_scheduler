@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sun } from 'lucide-react'
+import { Repeat, Sun } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   HOURS_IN_DAY,
@@ -111,10 +111,19 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
                     <button
                       type="button"
                       className="week-chip"
-                      key={entry.id}
+                      key={`${entry.id}-${entry.date}`}
                       onClick={() => onEntryClick(entry)}
                     >
-                      {entry.title}
+                      <span className="week-chip__title">{entry.title}</span>
+                      {entry.recurrence !== 'none' && (
+                        <Repeat
+                          className="entry-repeat"
+                          size={13}
+                          strokeWidth={1.5}
+                          role="img"
+                          aria-label="Повторяется"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -171,7 +180,7 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
 
                 return (
                   <button
-                    key={entry.id}
+                    key={`${entry.id}-${entry.date}`}
                     type="button"
                     className={`week-event${height < 44 ? ' week-event--short' : ''}`}
                     style={{
@@ -184,6 +193,15 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
                   >
                     <span className="week-event__time">
                       {formatTimeRange(entry.start, entry.end)}
+                      {entry.recurrence !== 'none' && (
+                        <Repeat
+                          className="entry-repeat"
+                          size={13}
+                          strokeWidth={1.5}
+                          role="img"
+                          aria-label="Повторяется"
+                        />
+                      )}
                     </span>
                     <span className="week-event__title">{entry.title}</span>
                   </button>

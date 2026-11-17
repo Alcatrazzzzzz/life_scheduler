@@ -8,7 +8,8 @@ public sealed record CreateScheduleRequest(
     DateOnly Date,
     TimeOnly? Start,
     TimeOnly? End,
-    string? Notes);
+    string? Notes,
+    ScheduleRecurrence Recurrence = ScheduleRecurrence.None);
 
 public static class CreateSchedule
 {
@@ -19,7 +20,8 @@ public static class CreateSchedule
         TimeOnly? Start,
         TimeOnly? End,
         string? Notes,
-        DateTimeOffset CreatedAt);
+        DateTimeOffset CreatedAt,
+        ScheduleRecurrence Recurrence);
 
     public static async Task<Results<Created<Response>, ValidationProblem>> Handle(
         CreateScheduleRequest request,
@@ -47,6 +49,7 @@ public static class CreateSchedule
             Start = request.Start,
             End = request.End,
             Notes = request.Notes,
+            Recurrence = request.Recurrence,
             CreatedAt = DateTimeOffset.UtcNow,
         };
 
@@ -60,7 +63,8 @@ public static class CreateSchedule
             entry.Start,
             entry.End,
             entry.Notes,
-            entry.CreatedAt);
+            entry.CreatedAt,
+            entry.Recurrence);
 
         return TypedResults.Created($"/api/schedules/{entry.Id}", response);
     }

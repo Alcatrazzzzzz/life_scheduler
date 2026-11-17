@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
 using Microsoft.EntityFrameworkCore;
@@ -5,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 
 var connectionString = builder.Configuration.GetConnectionString("LifeSchedulerDb");
 builder.Services.AddDbContext<LifeSchedulerDbContext>(options => options.UseSqlite(connectionString));

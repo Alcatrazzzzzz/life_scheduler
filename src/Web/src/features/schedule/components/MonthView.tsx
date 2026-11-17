@@ -1,3 +1,4 @@
+import { Repeat } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   WEEKDAY_LABELS,
@@ -57,13 +58,22 @@ export function MonthView({ anchor, days, entries, onCreateAt, onEntryClick }: M
                   <button
                     type="button"
                     className="month-chip"
-                    key={entry.id}
+                    key={`${entry.id}-${entry.date}`}
                     onClick={() => onEntryClick(entry)}
                   >
                     {entry.start && (
                       <span className="month-chip__time">{entry.start.slice(0, 5)}</span>
                     )}
                     <span className="month-chip__title">{entry.title}</span>
+                    {entry.recurrence !== 'none' && (
+                      <Repeat
+                        className="entry-repeat month-chip__repeat"
+                        size={13}
+                        strokeWidth={1.5}
+                        role="img"
+                        aria-label="Повторяется"
+                      />
+                    )}
                   </button>
                 ))}
                 {hidden > 0 && <span className="month-cell__more">ещё {hidden}</span>}

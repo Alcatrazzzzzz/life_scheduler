@@ -109,7 +109,7 @@ export function ScheduleCalendar() {
           </div>
 
           <button type="button" className="btn btn--primary" onClick={openCreateNow}>
-            <Plus size={16} strokeWidth={1.5} aria-hidden="true" />
+            <Plus size={16} strokeWidth={1.5} className="icon-accent" aria-hidden="true" />
             Новая запись
           </button>
         </div>

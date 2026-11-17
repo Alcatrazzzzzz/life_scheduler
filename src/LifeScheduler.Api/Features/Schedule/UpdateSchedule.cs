@@ -9,7 +9,8 @@ public sealed record UpdateScheduleRequest(
     DateOnly Date,
     TimeOnly? Start,
     TimeOnly? End,
-    string? Notes);
+    string? Notes,
+    ScheduleRecurrence Recurrence = ScheduleRecurrence.None);
 
 public static class UpdateSchedule
 {
@@ -42,6 +43,7 @@ public static class UpdateSchedule
         entry.Start = request.Start;
         entry.End = request.End;
         entry.Notes = request.Notes;
+        entry.Recurrence = request.Recurrence;
 
         await db.SaveChangesAsync(ct);
 

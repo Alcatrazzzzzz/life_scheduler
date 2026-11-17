@@ -114,4 +114,6 @@ EF Core (SQLite, `dotnet-ef` — локальный tool в `.config/dotnet-tool
 <!-- claude-reflect: learned rules (saved from the band; edit freely) -->
 ## Learned rules
 - In this app's UI, hover effects must animate smoothly with a gradual fill rather than applying instantly.
+- Store session data files only in docs/sessions, never in the web folder or repo root.
+- In dark theme, footnote/hint text must be clearly readable: increase text contrast or lighten the hint's background.
 <!-- end claude-reflect -->

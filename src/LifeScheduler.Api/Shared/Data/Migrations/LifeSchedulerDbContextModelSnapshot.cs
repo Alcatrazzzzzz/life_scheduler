@@ -36,6 +36,13 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Recurrence")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("None");
+
                     b.Property<TimeOnly?>("Start")
                         .HasColumnType("TEXT");
 

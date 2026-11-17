@@ -10,6 +10,11 @@ public sealed class ScheduleEntryConfiguration : IEntityTypeConfiguration<Schedu
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Title).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Notes).HasMaxLength(2000);
+        builder
+            .Property(e => e.Recurrence)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .HasDefaultValue(ScheduleRecurrence.None);
         builder.HasIndex(e => e.Date);
     }
 }

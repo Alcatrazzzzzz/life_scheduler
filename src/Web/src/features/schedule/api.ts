@@ -1,3 +1,5 @@
+export type ScheduleRecurrence = 'none' | 'daily' | 'weekly'
+
 export interface ScheduleEntry {
   id: string
   title: string
@@ -6,6 +8,7 @@ export interface ScheduleEntry {
   end: string | null
   notes: string | null
   createdAt: string
+  recurrence: ScheduleRecurrence
 }
 
 export interface CreateScheduleInput {
@@ -14,6 +17,7 @@ export interface CreateScheduleInput {
   start: string | null
   end: string | null
   notes?: string
+  recurrence: ScheduleRecurrence
 }
 
 export interface UpdateScheduleInput {
@@ -22,6 +26,7 @@ export interface UpdateScheduleInput {
   start: string | null
   end: string | null
   notes?: string
+  recurrence: ScheduleRecurrence
 }
 
 async function toApiError(res: Response): Promise<Error> {
