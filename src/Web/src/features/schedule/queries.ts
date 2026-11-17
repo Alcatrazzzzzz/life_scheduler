@@ -1,4 +1,10 @@
-import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query'
 import { createSchedule, deleteSchedule, getSchedule, listSchedules } from './api'
 import type { ScheduleEntry } from './api'
 
@@ -56,6 +62,7 @@ export function useSchedules(from?: string, to?: string) {
   return useQuery({
     queryKey: scheduleKeys.list(from, to),
     queryFn: () => listSchedules(from, to),
+    placeholderData: keepPreviousData,
   })
 }
 

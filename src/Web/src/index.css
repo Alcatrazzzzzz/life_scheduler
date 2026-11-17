@@ -33,6 +33,10 @@
   --color-danger: #a8452c;
   --color-code-bg: #eef2f8;
 
+  /* Всплывающие слои (раздел 6 DESIGN.md) */
+  --color-shadow: #131312;
+  --color-backdrop: color-mix(in srgb, #141413 45%, transparent);
+
   /* Радиусы */
   --radius-control-sm: 6px;
   --radius-control: 8px;
@@ -213,10 +217,10 @@ a {
   border-radius: var(--radius-control);
   cursor: pointer;
   transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    opacity var(--duration-fast) var(--ease-standard);
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard),
+    opacity var(--duration-base) var(--ease-standard);
 }
 
 .btn:disabled {
