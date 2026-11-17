@@ -1,24 +1,45 @@
 :root {
   color-scheme: light dark;
 
-  /* Токены: docs/design-refs/DESIGN.md */
+  /* Токены: docs/design-refs/DESIGN.md, раздел 11 */
+
+  /* Поверхности */
   --color-bg: #faf9f5;
   --color-surface: #fbfbfb;
   --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f2f1ec;
+  --color-surface-control: #e8e6dc;
+  --color-surface-input: #faf9f5;
+  --color-surface-selected: #f2f1ec;
+  /* выведено: в референсах измерена только тёмная выбранная строка #3c3c3b */
+
+  /* Текст */
   --color-text: #141413;
   --color-text-secondary: #5e5d59;
+  --color-text-tertiary: #30302e;
   --color-text-muted: #9c9c99;
+
+  /* Инверсия */
   --color-inverse-bg: #141413;
   --color-inverse-text: #faf9f5;
+
+  /* Линии */
   --color-border: #e8e6dc;
   --color-border-neutral: #ebebeb;
+  --border-width: 1px;
+
+  /* Акцент и статусы */
   --color-accent: #d97757;
   --color-danger: #a8452c;
+  --color-code-bg: #eef2f8;
 
-  --border-width: 1px;
-  --radius-control: 8px;
+  /* Радиусы */
   --radius-control-sm: 6px;
+  --radius-control: 8px;
+  --radius-panel: 10px;
+  --radius-tile: 12px;
 
+  /* Сетка */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -28,12 +49,37 @@
   --space-10: 40px;
   --space-15: 60px;
 
+  /* Высоты контролов */
+  --control-height: 40px;
+  --control-height-sm: 36px;
+  --control-height-xs: 32px;
+
+  /* Обвязка страницы приложения */
+  --header-height: 84px;
+  --content-max: 1280px;
+
+  /* Типографика */
+  --font-hero-size: 72px;
   --font-display-size: 64px;
-  /* 64px из референса — лендинговый кегль; заголовку страницы приложения он велик */
   --font-page-title-size: 44px;
   --font-body-size: 16px;
-  --font-nav-size: 15px;
+  --font-body-lg-size: 20px;
+  --font-body-line: 24px;
+  --font-nav-size: 16px;
+  --font-field-size: 15px;
   --font-meta-size: 13px;
+  --font-ui-size: 13px;
+  --font-group-label-size: 11px;
+  --font-weight-body: 400;
+  --font-weight-control: 500;
+  --font-weight-display: 600;
+
+  /* Движение (всё выведено) */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -48,18 +94,30 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg: #1f1e1c;
-    --color-surface: #262523;
-    --color-surface-raised: #2e2d2a;
-    --color-text: #f5f4ef;
-    --color-text-secondary: #b8b6ae;
-    --color-text-muted: #8a8884;
-    --color-inverse-bg: #f5f4ef;
-    --color-inverse-text: #1f1e1c;
-    --color-border: #3a3936;
-    --color-border-neutral: #37373a;
-    --color-accent: #e2835f;
+    --color-bg: #141413;
+    --color-surface: #1a1918;
+    --color-surface-raised: #262624;
+    --color-surface-sunken: #0b0b0b;
+    --color-surface-control: #30302e;
+    --color-surface-input: #1f1f1e;
+    --color-surface-selected: #3c3c3b;
+
+    --color-text: #faf9f5;
+    --color-text-secondary: #87867f;
+    --color-text-tertiary: #b8b6ae;
+    --color-text-muted: #75746f;
+
+    --color-inverse-bg: #faf9f5;
+    --color-inverse-text: #141413;
+
+    --color-border: #3d3d3a;
+    --color-border-neutral: #313130;
+
+    --color-accent: #d97757;
     --color-danger: #e08a72;
+    --color-code-bg: #141f2d;
+
+    --header-height: 80px;
   }
 }
 
@@ -72,7 +130,7 @@ body {
 }
 
 #root {
-  max-width: 1126px;
+  max-width: var(--content-max);
   margin: 0 auto;
   min-height: 100svh;
   display: flex;
@@ -82,7 +140,7 @@ body {
 h1,
 h2 {
   margin: 0;
-  font-weight: 600;
+  font-weight: var(--font-weight-display);
   color: var(--color-text);
 }
 
@@ -95,13 +153,144 @@ h1 {
 h2 {
   font-size: 20px;
   line-height: 1.3;
+  font-weight: var(--font-weight-control);
 }
 
 p {
   margin: 0;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
+}
+
+/* Шапка приложения */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--header-height);
+  padding: 0 var(--space-15);
+  border-bottom: var(--border-width) solid var(--color-border-neutral);
+}
+
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-nav-size);
+  font-weight: var(--font-weight-control);
+  color: var(--color-text);
+}
+
+.app-logo__mark {
+  flex: none;
+  color: var(--color-accent);
+}
+
+/* Кнопки: раздел 4.2 */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: 0 var(--space-6);
+  font: inherit;
+  font-size: var(--font-field-size);
+  font-weight: var(--font-weight-control);
+  letter-spacing: 0;
+  white-space: nowrap;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn--primary {
+  color: var(--color-inverse-text);
+  background: var(--color-inverse-bg);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-inverse-bg) 88%, var(--color-bg));
+}
+
+.btn--primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-inverse-bg) 94%, var(--color-bg));
+}
+
+.btn--secondary {
+  color: var(--color-text);
+  background: var(--color-surface-control);
+  border-color: var(--color-border);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.btn--secondary:active:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+.btn--ghost {
+  color: var(--color-text);
+  background: transparent;
+  border-color: var(--color-border);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-surface-input);
+}
+
+.btn--ghost:active:not(:disabled) {
+  background: var(--color-surface-raised);
+}
+
+/* Прикладной вариант для действий в строке таблицы */
+
+.btn--row {
+  min-height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-body);
+  color: var(--color-text-secondary);
+  background: transparent;
+  border-color: var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+.btn--row:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-surface-input);
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    padding: 0 var(--space-6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
 }

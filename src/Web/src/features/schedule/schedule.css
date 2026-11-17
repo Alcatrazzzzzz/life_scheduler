@@ -1,4 +1,5 @@
 .schedule-page {
+  width: 100%;
   padding: var(--space-10) var(--space-15) var(--space-15);
   text-align: left;
 }
@@ -11,7 +12,7 @@
 
 .schedule-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 320px) 1fr;
+  grid-template-columns: minmax(280px, 340px) 1fr;
   gap: var(--space-8);
   align-items: start;
 }
@@ -33,7 +34,11 @@
   padding: var(--space-6);
   background: var(--color-surface-raised);
   border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-panel);
+}
+
+.schedule-form h2 {
+  margin-bottom: var(--space-2);
 }
 
 .schedule-form label,
@@ -42,6 +47,7 @@
   flex-direction: column;
   gap: var(--space-2);
   font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
   color: var(--color-text-secondary);
 }
 
@@ -50,16 +56,18 @@
 .schedule-filter input {
   width: 100%;
   font: inherit;
-  font-size: var(--font-nav-size);
+  font-size: var(--font-field-size);
+  font-weight: var(--font-weight-body);
   color: var(--color-text);
-  background: var(--color-bg);
+  background: var(--color-surface-input);
   border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius-control-sm);
+  transition: border-color var(--duration-fast) var(--ease-standard);
 }
 
 .schedule-form input,
 .schedule-filter input {
-  min-height: var(--space-10);
+  min-height: var(--control-height);
   padding: 0 var(--space-3);
 }
 
@@ -68,39 +76,31 @@
   resize: vertical;
 }
 
+.schedule-form input:hover,
+.schedule-form textarea:hover,
+.schedule-filter input:hover {
+  border-color: var(--color-text-muted);
+}
+
 .schedule-form input:focus,
 .schedule-form textarea:focus,
 .schedule-filter input:focus {
   border-color: var(--color-text-secondary);
 }
 
-.schedule-form > button {
+.schedule-form > .btn {
   align-self: flex-start;
-  min-height: var(--space-10);
-  padding: 0 var(--space-6);
-  font: inherit;
-  font-size: var(--font-nav-size);
-  font-weight: 500;
-  color: var(--color-inverse-text);
-  background: var(--color-inverse-bg);
-  border: 0;
-  border-radius: var(--radius-control);
-  cursor: pointer;
-}
-
-.schedule-form > button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-inverse-bg) 88%, var(--color-bg));
-}
-
-.schedule-form > button:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .schedule-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.schedule-list h2 {
+  margin-bottom: var(--space-1);
 }
 
 .schedule-filter {
@@ -114,20 +114,24 @@
 }
 
 .schedule-list > p:not(.schedule-error) {
-  font-size: var(--font-nav-size);
+  font-size: var(--font-field-size);
   color: var(--color-text-secondary);
+}
+
+.schedule-table {
+  overflow-x: auto;
 }
 
 .schedule-list table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--font-nav-size);
+  font-size: var(--font-field-size);
 }
 
 .schedule-list th {
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-meta-size);
-  font-weight: 500;
+  font-weight: var(--font-weight-control);
   text-align: left;
   color: var(--color-text-secondary);
   border-bottom: var(--border-width) solid var(--color-border);
@@ -140,6 +144,14 @@
   vertical-align: top;
 }
 
+.schedule-list tbody tr {
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.schedule-list tbody tr:hover {
+  background: var(--color-surface-input);
+}
+
 .schedule-list td:nth-child(1),
 .schedule-list td:nth-child(2) {
   white-space: nowrap;
@@ -148,6 +160,7 @@
 
 .schedule-list td:nth-child(3) {
   color: var(--color-text);
+  font-weight: var(--font-weight-control);
 }
 
 .schedule-list td:last-child {
@@ -155,29 +168,13 @@
   text-align: right;
 }
 
-.schedule-list td button {
-  min-height: var(--space-8);
-  padding: 0 var(--space-3);
-  font: inherit;
-  font-size: var(--font-meta-size);
-  color: var(--color-text-secondary);
-  background: transparent;
-  border: var(--border-width) solid var(--color-border);
-  border-radius: var(--radius-control-sm);
-  cursor: pointer;
-}
-
-.schedule-list td button:hover:not(:disabled) {
-  color: var(--color-text);
-  background: var(--color-surface);
-}
-
-.schedule-list td button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .schedule-error {
-  font-size: var(--font-nav-size);
+  font-size: var(--font-field-size);
   color: var(--color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-list tbody tr {
+    transition: none;
+  }
 }

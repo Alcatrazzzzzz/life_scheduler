@@ -94,7 +94,7 @@ export function CreateScheduleForm() {
 
       {createSchedule.isError && <p className="schedule-error">{createSchedule.error.message}</p>}
 
-      <button type="submit" disabled={createSchedule.isPending}>
+      <button type="submit" className="btn btn--primary" disabled={createSchedule.isPending}>
         {createSchedule.isPending ? 'Сохраняю…' : 'Сохранить'}
       </button>
     </form>

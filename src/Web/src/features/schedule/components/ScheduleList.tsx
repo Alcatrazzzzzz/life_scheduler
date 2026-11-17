@@ -32,38 +32,41 @@ export function ScheduleList() {
       {schedules.data?.length === 0 && <p>Записей нет.</p>}
 
       {schedules.data && schedules.data.length > 0 && (
-        <table>
-          <thead>
-            <tr>
-              <th>Дата</th>
-              <th>Время</th>
-              <th>Название</th>
-              <th>Заметки</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {schedules.data.map((entry) => (
-              <tr key={entry.id}>
-                <td>{entry.date}</td>
-                <td>
-                  {formatTime(entry.start)}–{formatTime(entry.end)}
-                </td>
-                <td>{entry.title}</td>
-                <td>{entry.notes ?? '—'}</td>
-                <td>
-                  <button
-                    type="button"
-                    onClick={() => removeSchedule.mutate(entry.id)}
-                    disabled={removeSchedule.isPending && removeSchedule.variables === entry.id}
-                  >
-                    Удалить
-                  </button>
-                </td>
+        <div className="schedule-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Время</th>
+                <th>Название</th>
+                <th>Заметки</th>
+                <th />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {schedules.data.map((entry) => (
+                <tr key={entry.id}>
+                  <td>{entry.date}</td>
+                  <td>
+                    {formatTime(entry.start)}–{formatTime(entry.end)}
+                  </td>
+                  <td>{entry.title}</td>
+                  <td>{entry.notes ?? '—'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn--row"
+                      onClick={() => removeSchedule.mutate(entry.id)}
+                      disabled={removeSchedule.isPending && removeSchedule.variables === entry.id}
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {removeSchedule.isError && <p className="schedule-error">{removeSchedule.error.message}</p>}
