@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* Токены: docs/design-refs/DESIGN.md, раздел 11 */
 
@@ -82,6 +82,7 @@
   --duration-fast: 120ms;
   --duration-base: 180ms;
   --duration-slow: 240ms;
+  --duration-hover: 240ms; /* выведено: заливки крупных сегментов календаря — плавнее кнопок */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -96,33 +97,49 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #141413;
-    --color-surface: #1a1918;
-    --color-surface-raised: #262624;
-    --color-surface-sunken: #0b0b0b;
-    --color-surface-control: #30302e;
-    --color-surface-input: #1f1f1e;
-    --color-surface-selected: #3c3c3b;
+/* Тему выставляет ThemeToggle / инлайн-скрипт в index.html */
+:root[data-theme='dark'] {
+  color-scheme: dark;
 
-    --color-text: #faf9f5;
-    --color-text-secondary: #87867f;
-    --color-text-tertiary: #b8b6ae;
-    --color-text-muted: #75746f;
+  --color-bg: #141413;
+  --color-surface: #1a1918;
+  --color-surface-raised: #262624;
+  --color-surface-sunken: #0b0b0b;
+  --color-surface-control: #30302e;
+  --color-surface-input: #1f1f1e;
+  --color-surface-selected: #3c3c3b;
 
-    --color-inverse-bg: #faf9f5;
-    --color-inverse-text: #141413;
+  --color-text: #faf9f5;
+  --color-text-secondary: #87867f;
+  --color-text-tertiary: #b8b6ae;
+  --color-text-muted: #75746f;
 
-    --color-border: #3d3d3a;
-    --color-border-neutral: #313130;
+  --color-inverse-bg: #faf9f5;
+  --color-inverse-text: #141413;
 
-    --color-accent: #d97757;
-    --color-danger: #e08a72;
-    --color-code-bg: #141f2d;
+  --color-border: #3d3d3a;
+  --color-border-neutral: #313130;
 
-    --header-height: 80px;
-  }
+  --color-accent: #d97757;
+  --color-danger: #e08a72;
+  --color-code-bg: #141f2d;
+
+  --header-height: 80px;
+}
+
+/* Смена темы: цвета затухают, но только на время переключения (атрибут ставит ThemeToggle),
+   чтобы постоянные transition'ы не замедляли hover */
+:root[data-theme-switching],
+:root[data-theme-switching] * {
+  transition:
+    background-color var(--duration-slow) var(--ease-standard),
+    border-color var(--duration-slow) var(--ease-standard),
+    color var(--duration-slow) var(--ease-standard);
+}
+
+/* Иконки тумблера перетекают по opacity, а не по цвету */
+:root[data-theme-switching] .theme-toggle__icon {
+  transition: opacity var(--duration-slow) var(--ease-standard);
 }
 
 * {
@@ -199,6 +216,33 @@ a {
   color: var(--color-accent);
 }
 
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+/* Иконка тумблера темы: солнце и луна лежат друг на друге и перетекают по opacity */
+
+.theme-toggle__icons {
+  position: relative;
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.theme-toggle__icon {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--duration-slow) var(--ease-standard);
+}
+
+.theme-toggle__icon.is-active {
+  opacity: 1;
+}
+
 /* Кнопки: раздел 4.2 */
 
 .btn {
@@ -269,6 +313,13 @@ a {
   background: var(--color-surface-raised);
 }
 
+/* Иконочная кнопка: квадрат по высоте контрола, только иконка */
+.btn--icon {
+  width: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  padding: 0;
+}
+
 /* Прикладной вариант для действий в строке таблицы */
 
 .btn--row {
@@ -296,5 +347,15 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .btn {
     transition: color var(--duration-fast) var(--ease-standard);
+  }
+
+  :root[data-theme-switching],
+  :root[data-theme-switching] *,
+  :root[data-theme-switching] .theme-toggle__icon {
+    transition: none;
+  }
+
+  .theme-toggle__icon {
+    transition: none;
   }
 }
