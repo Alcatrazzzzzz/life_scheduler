@@ -171,10 +171,11 @@
 }
 
 .week-allday__label {
+  display: flex;
+  justify-content: flex-end;
   padding: var(--space-2) var(--space-2) var(--space-2) 0;
   font-size: var(--font-group-label-size);
   color: var(--color-text-muted);
-  text-align: right;
 }
 
 .week-allday__cell {

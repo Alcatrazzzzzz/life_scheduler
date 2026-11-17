@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Sun } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   HOURS_IN_DAY,
@@ -70,7 +71,9 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
         </div>
 
         <div className="week-allday">
-          <div className="week-allday__label">весь день</div>
+          <div className="week-allday__label" role="img" aria-label="Весь день">
+            <Sun size={14} strokeWidth={1.5} aria-hidden="true" />
+          </div>
           {days.map((day) => {
             const dayKey = toDateString(day)
             const untimed = (grouped.get(dayKey) ?? []).filter((entry) => entry.start === null)
