@@ -341,12 +341,15 @@
 
 .week-now {
   position: absolute;
+  top: 0;
   right: 0;
   left: 0;
   z-index: 3;
   height: 0;
   border-top: 2px solid var(--color-accent);
   pointer-events: none;
+  /* Переход длится ровно один тик: линия доползает до новой минуты без рывка. */
+  transition: transform var(--duration-minute) linear;
 }
 
 .week-now__dot {
@@ -750,6 +753,7 @@
   .week-event,
   .month-cell__surface,
   .month-chip,
+  .week-now,
   .modal__close,
   .schedule-form input,
   .schedule-form textarea {

@@ -83,6 +83,7 @@
   --duration-base: 180ms;
   --duration-slow: 240ms;
   --duration-hover: 240ms; /* выведено: заливки крупных сегментов календаря — плавнее кнопок */
+  --duration-minute: 60s; /* выведено: ползущая линия текущего времени в недельном виде */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 

@@ -19,16 +19,19 @@ if (-not $summary -or $summary.Length -lt 200) { exit 0 }
 
 $date = Get-Date -Format "yyyy-MM-dd"
 $time = Get-Date -Format "HH-mm"
-$dir = "docs/sessions"
+
+# Путь считаем от корня проекта: хук наследует текущую папку оболочки,
+# которая может оказаться подпапкой (например, src/Web).
+$root = $env:CLAUDE_PROJECT_DIR
+if (-not $root) { $root = Split-Path -Parent (Split-Path -Parent $PSScriptRoot) }
+
+$dir = Join-Path $root "docs/sessions"
 $file = Join-Path $dir "$date-$time.md"
 
 New-Item -ItemType Directory -Force -Path $dir | Out-Null
 $content = "# Сессия $date $time`n`n$summary"
 
 # WriteAllText по умолчанию пишет UTF-8 без BOM.
-[System.IO.File]::WriteAllText(
-    (Join-Path (Get-Location) $file),
-    $content
-)
+[System.IO.File]::WriteAllText($file, $content)
 
 exit 0

@@ -27,6 +27,9 @@ interface WeekViewProps {
 
 const HOURS = Array.from({ length: HOURS_IN_DAY }, (_, hour) => hour)
 
+/** Длительность перехода линии «сейчас» в CSS (--duration-minute) должна совпадать с этим шагом. */
+const NOW_TICK_MS = 60_000
+
 export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const grouped = groupByDate(entries)
@@ -36,8 +39,18 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
   )
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000)
-    return () => window.clearInterval(timer)
+    let intervalId: number | undefined
+
+    // Первый тик — ровно на границе минуты, чтобы подпись и линия менялись вместе с часами.
+    const timeoutId = window.setTimeout(() => {
+      setNow(new Date())
+      intervalId = window.setInterval(() => setNow(new Date()), NOW_TICK_MS)
+    }, NOW_TICK_MS - (Date.now() % NOW_TICK_MS))
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      if (intervalId !== undefined) window.clearInterval(intervalId)
+    }
   }, [])
 
   useEffect(() => {
@@ -48,7 +61,10 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
     scroller.scrollTop = Math.max((initialHourRef.current - 1) * HOUR_HEIGHT - stickyHeight, 0)
   }, [])
 
-  const nowMinutes = now.getHours() * 60 + now.getMinutes()
+  // Цель перехода — положение на момент следующего тика: за переход линия проползает ровно
+  // минуту и весь интервал показывает реальное время, а не отстаёт от него на минуту.
+  const targetSeconds =
+    now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds() + NOW_TICK_MS / 1000
 
   return (
     <div className="week-view" ref={scrollRef}>
@@ -177,7 +193,7 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
               {isToday(day) && (
                 <div
                   className="week-now"
-                  style={{ top: (nowMinutes / 60) * HOUR_HEIGHT }}
+                  style={{ transform: `translateY(${(targetSeconds / 3600) * HOUR_HEIGHT}px)` }}
                   aria-hidden="true"
                 >
                   <span className="week-now__dot" />
