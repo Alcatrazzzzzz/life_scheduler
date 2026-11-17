@@ -33,7 +33,7 @@ function isWithinFilter(entry: ScheduleEntry, filter: ListFilter): boolean {
 function sortLikeEndpoint(entries: ScheduleEntry[]): ScheduleEntry[] {
   return [...entries].sort((a, b) => {
     const byDate = a.date.localeCompare(b.date)
-    return byDate !== 0 ? byDate : a.start.localeCompare(b.start)
+    return byDate !== 0 ? byDate : (a.start ?? '').localeCompare(b.start ?? '')
   })
 }
 

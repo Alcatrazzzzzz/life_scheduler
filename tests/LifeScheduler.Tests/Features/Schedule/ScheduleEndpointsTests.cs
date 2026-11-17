@@ -79,6 +79,98 @@ public sealed class ScheduleEndpointsTests
     }
 
     [Fact]
+    public async Task CreateSchedule_WithoutTime_ReturnsCreated()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var request = new CreateScheduleRequest(
+            "Разобрать почту",
+            new DateOnly(2026, 11, 20),
+            null,
+            null,
+            null);
+
+        var response = await client.PostAsJsonAsync("/api/schedules", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<CreateSchedule.Response>();
+        Assert.NotNull(created);
+        Assert.Null(created.Start);
+        Assert.Null(created.End);
+        Assert.Equal(new DateOnly(2026, 11, 20), created.Date);
+    }
+
+    [Fact]
+    public async Task CreateSchedule_WhenOnlyStartProvided_ReturnsValidationProblem()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var request = new CreateScheduleRequest(
+            "Встреча",
+            new DateOnly(2026, 11, 20),
+            new TimeOnly(10, 0),
+            null,
+            null);
+
+        var response = await client.PostAsJsonAsync("/api/schedules", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        Assert.NotNull(problem);
+        Assert.True(problem.Errors.ContainsKey("End"));
+    }
+
+    [Fact]
+    public async Task ListSchedule_ShowsEntriesWithoutTimeBeforeTimedEntries()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var date = new DateOnly(2026, 11, 20);
+        await CreateEntryAsync(client, date, "Вечерняя прогулка", new TimeOnly(18, 0), new TimeOnly(19, 0));
+        await CreateEntryAsync(client, date, "Разобрать почту", null, null);
+
+        var response = await client.GetFromJsonAsync<List<ListSchedule.Response>>(
+            $"/api/schedules?from={date:yyyy-MM-dd}&to={date:yyyy-MM-dd}");
+
+        Assert.NotNull(response);
+        Assert.Equal(2, response.Count);
+        Assert.Equal("Разобрать почту", response[0].Title);
+        Assert.Null(response[0].Start);
+        Assert.Equal("Вечерняя прогулка", response[1].Title);
+    }
+
+    [Fact]
+    public async Task UpdateSchedule_CanRemoveTime()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var id = await CreateEntryAsync(client);
+
+        var request = new UpdateScheduleRequest(
+            "Утренняя пробежка",
+            new DateOnly(2026, 11, 20),
+            null,
+            null,
+            null);
+
+        var response = await client.PutAsJsonAsync($"/api/schedules/{id}", request);
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var updated = await client.GetFromJsonAsync<GetSchedule.Response>($"/api/schedules/{id}");
+        Assert.NotNull(updated);
+        Assert.Null(updated.Start);
+        Assert.Null(updated.End);
+    }
+
+    [Fact]
     public async Task GetSchedule_WhenExists_ReturnsOk()
     {
         using var factory = new ScheduleApiFactory();
@@ -207,12 +299,22 @@ public sealed class ScheduleEndpointsTests
 
     private static async Task<Guid> CreateEntryAsync(HttpClient client)
     {
-        var request = new CreateScheduleRequest(
-            "Утренняя пробежка",
+        return await CreateEntryAsync(
+            client,
             new DateOnly(2026, 11, 20),
+            "Утренняя пробежка",
             new TimeOnly(9, 0),
-            new TimeOnly(10, 30),
-            "5 км");
+            new TimeOnly(10, 30));
+    }
+
+    private static async Task<Guid> CreateEntryAsync(
+        HttpClient client,
+        DateOnly date,
+        string title,
+        TimeOnly? start,
+        TimeOnly? end)
+    {
+        var request = new CreateScheduleRequest(title, date, start, end, "5 км");
 
         var response = await client.PostAsJsonAsync("/api/schedules", request);
 

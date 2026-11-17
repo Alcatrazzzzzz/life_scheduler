@@ -51,6 +51,19 @@
   color: var(--color-text-secondary);
 }
 
+.schedule-form label.schedule-form-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.schedule-form .schedule-form-checkbox input {
+  width: auto;
+  min-height: 0;
+  accent-color: var(--color-text);
+}
+
 .schedule-form input,
 .schedule-form textarea,
 .schedule-filter input {

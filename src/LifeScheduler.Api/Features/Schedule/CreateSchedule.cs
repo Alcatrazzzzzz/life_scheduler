@@ -6,8 +6,8 @@ namespace LifeScheduler.Api.Features.Schedule;
 public sealed record CreateScheduleRequest(
     string Title,
     DateOnly Date,
-    TimeOnly Start,
-    TimeOnly End,
+    TimeOnly? Start,
+    TimeOnly? End,
     string? Notes);
 
 public static class CreateSchedule
@@ -16,8 +16,8 @@ public static class CreateSchedule
         Guid Id,
         string Title,
         DateOnly Date,
-        TimeOnly Start,
-        TimeOnly End,
+        TimeOnly? Start,
+        TimeOnly? End,
         string? Notes,
         DateTimeOffset CreatedAt);
 
@@ -31,7 +31,9 @@ public static class CreateSchedule
         if (string.IsNullOrWhiteSpace(request.Title))
             errors[nameof(request.Title)] = ["Title обязателен."];
 
-        if (request.End <= request.Start)
+        if ((request.Start is null) != (request.End is null))
+            errors[nameof(request.End)] = ["Укажите и Start, и End — либо оставьте оба пустыми."];
+        else if (request.Start is { } start && request.End is { } end && end <= start)
             errors[nameof(request.End)] = ["End должен быть позже Start."];
 
         if (errors.Count > 0)

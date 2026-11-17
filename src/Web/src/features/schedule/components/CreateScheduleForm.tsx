@@ -7,6 +7,7 @@ interface FormState {
   start: string
   end: string
   notes: string
+  untimed: boolean
 }
 
 function emptyForm(): FormState {
@@ -20,6 +21,7 @@ function emptyForm(): FormState {
     start: '',
     end: '',
     notes: '',
+    untimed: false,
   }
 }
 
@@ -27,7 +29,7 @@ export function CreateScheduleForm() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const createSchedule = useCreateSchedule()
 
-  function update(field: keyof FormState, value: string) {
+  function update<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
@@ -40,8 +42,8 @@ export function CreateScheduleForm() {
       {
         title: form.title.trim(),
         date: form.date,
-        start: form.start,
-        end: form.end,
+        start: form.untimed ? null : form.start,
+        end: form.untimed ? null : form.end,
         notes: notes.length > 0 ? notes : undefined,
       },
       { onSuccess: () => setForm(emptyForm()) },
@@ -67,25 +69,38 @@ export function CreateScheduleForm() {
         />
       </label>
 
-      <label>
-        Начало
+      <label className="schedule-form-checkbox">
         <input
-          type="time"
-          value={form.start}
-          onChange={(e) => update('start', e.target.value)}
-          required
+          type="checkbox"
+          checked={form.untimed}
+          onChange={(e) => update('untimed', e.target.checked)}
         />
+        Без времени
       </label>
 
-      <label>
-        Окончание
-        <input
-          type="time"
-          value={form.end}
-          onChange={(e) => update('end', e.target.value)}
-          required
-        />
-      </label>
+      {!form.untimed && (
+        <>
+          <label>
+            Начало
+            <input
+              type="time"
+              value={form.start}
+              onChange={(e) => update('start', e.target.value)}
+              required
+            />
+          </label>
+
+          <label>
+            Окончание
+            <input
+              type="time"
+              value={form.end}
+              onChange={(e) => update('end', e.target.value)}
+              required
+            />
+          </label>
+        </>
+      )}
 
       <label>
         Заметки

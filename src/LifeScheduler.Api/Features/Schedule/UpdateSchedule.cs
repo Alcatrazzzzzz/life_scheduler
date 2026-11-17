@@ -7,8 +7,8 @@ namespace LifeScheduler.Api.Features.Schedule;
 public sealed record UpdateScheduleRequest(
     string Title,
     DateOnly Date,
-    TimeOnly Start,
-    TimeOnly End,
+    TimeOnly? Start,
+    TimeOnly? End,
     string? Notes);
 
 public static class UpdateSchedule
@@ -24,7 +24,9 @@ public static class UpdateSchedule
         if (string.IsNullOrWhiteSpace(request.Title))
             errors[nameof(request.Title)] = ["Title обязателен."];
 
-        if (request.End <= request.Start)
+        if ((request.Start is null) != (request.End is null))
+            errors[nameof(request.End)] = ["Укажите и Start, и End — либо оставьте оба пустыми."];
+        else if (request.Start is { } start && request.End is { } end && end <= start)
             errors[nameof(request.End)] = ["End должен быть позже Start."];
 
         if (errors.Count > 0)

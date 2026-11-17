@@ -10,8 +10,8 @@ public static class ListSchedule
         Guid Id,
         string Title,
         DateOnly Date,
-        TimeOnly Start,
-        TimeOnly End,
+        TimeOnly? Start,
+        TimeOnly? End,
         string? Notes,
         DateTimeOffset CreatedAt);
 
@@ -31,6 +31,7 @@ public static class ListSchedule
 
         var items = await query
             .OrderBy(e => e.Date)
+            .ThenBy(e => e.Start.HasValue ? 1 : 0)
             .ThenBy(e => e.Start)
             .Select(e => new Response(
                 e.Id, e.Title, e.Date, e.Start, e.End, e.Notes, e.CreatedAt))

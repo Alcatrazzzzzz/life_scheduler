@@ -5,6 +5,11 @@ function formatTime(value: string): string {
   return value.slice(0, 5)
 }
 
+function formatTimeRange(start: string | null, end: string | null): string {
+  if (start === null || end === null) return 'Без времени'
+  return `${formatTime(start)}–${formatTime(end)}`
+}
+
 export function ScheduleList() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -47,9 +52,7 @@ export function ScheduleList() {
               {schedules.data.map((entry) => (
                 <tr key={entry.id}>
                   <td>{entry.date}</td>
-                  <td>
-                    {formatTime(entry.start)}–{formatTime(entry.end)}
-                  </td>
+                  <td>{formatTimeRange(entry.start, entry.end)}</td>
                   <td>{entry.title}</td>
                   <td>{entry.notes ?? '—'}</td>
                   <td>

@@ -2,8 +2,8 @@ export interface ScheduleEntry {
   id: string
   title: string
   date: string
-  start: string
-  end: string
+  start: string | null
+  end: string | null
   notes: string | null
   createdAt: string
 }
@@ -11,16 +11,16 @@ export interface ScheduleEntry {
 export interface CreateScheduleInput {
   title: string
   date: string
-  start: string
-  end: string
+  start: string | null
+  end: string | null
   notes?: string
 }
 
 export interface UpdateScheduleInput {
   title: string
   date: string
-  start: string
-  end: string
+  start: string | null
+  end: string | null
   notes?: string
 }
 

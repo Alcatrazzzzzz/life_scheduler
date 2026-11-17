@@ -10,8 +10,8 @@ public static class GetSchedule
         Guid Id,
         string Title,
         DateOnly Date,
-        TimeOnly Start,
-        TimeOnly End,
+        TimeOnly? Start,
+        TimeOnly? End,
         string? Notes,
         DateTimeOffset CreatedAt);
 

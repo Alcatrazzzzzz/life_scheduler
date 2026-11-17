@@ -29,14 +29,14 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("TEXT");
 
-                    b.Property<TimeOnly>("End")
+                    b.Property<TimeOnly?>("End")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
-                    b.Property<TimeOnly>("Start")
+                    b.Property<TimeOnly?>("Start")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Title")

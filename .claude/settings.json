@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd src/Web && npm run typecheck --silent",
+            "command": "cd \"$CLAUDE_PROJECT_DIR/src/Web\" && npm run typecheck --silent",
             "timeout": 60
           }
         ]
@@ -58,8 +58,10 @@
             "command": "powershell.exe",
             "args": [
               "-NoProfile",
-              "-ExecutionPolicy", "Bypass",
-              "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/save-session-log.ps1"
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/save-session-log.ps1"
             ],
             "timeout": 15
           }
