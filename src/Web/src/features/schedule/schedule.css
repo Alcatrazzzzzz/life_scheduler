@@ -761,11 +761,13 @@
 
 .btn--danger {
   color: var(--color-danger);
-  background: transparent;
+}
+
+.btn--danger::before {
   border-color: var(--color-border);
 }
 
-.btn--danger:hover:not(:disabled) {
+.btn--danger:hover:not(:disabled)::before {
   background: var(--color-surface-input);
   border-color: var(--color-danger);
 }

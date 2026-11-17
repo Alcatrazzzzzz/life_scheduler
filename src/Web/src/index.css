@@ -247,6 +247,8 @@ a {
 /* Кнопки: раздел 4.2 */
 
 .btn {
+  position: relative;
+  z-index: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -262,10 +264,55 @@ a {
   border-radius: var(--radius-control);
   cursor: pointer;
   transition:
-    background-color var(--duration-base) var(--ease-standard),
-    border-color var(--duration-base) var(--ease-standard),
     color var(--duration-base) var(--ease-standard),
     opacity var(--duration-base) var(--ease-standard);
+}
+
+/* Плашка: фон и рамка кнопки. Растёт на hover только она, текст не перерисовывается */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--border-width) * -1);
+  z-index: -1;
+  pointer-events: none;
+  border: var(--border-width) solid transparent;
+  border-radius: inherit;
+  transition:
+    transform var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+}
+
+.btn:not(.btn--icon, .btn--row):hover:not(:disabled)::before {
+  transform: scale(1.02);
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control);
+  transition:
+    top var(--duration-base) var(--ease-standard),
+    right var(--duration-base) var(--ease-standard),
+    bottom var(--duration-base) var(--ease-standard),
+    left var(--duration-base) var(--ease-standard),
+    border-radius var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard);
+}
+
+.btn:not(.btn--icon, .btn--row):hover:not(:disabled)::after {
+  top: -3px;
+  right: -3px;
+  bottom: -3px;
+  left: -3px;
+  border-color: color-mix(in srgb, var(--color-text) 30%, transparent);
+  border-radius: calc(var(--radius-control) + 3px);
 }
 
 .btn:disabled {
@@ -275,42 +322,50 @@ a {
 
 .btn--primary {
   color: var(--color-inverse-text);
+}
+
+.btn--primary::before {
   background: var(--color-inverse-bg);
 }
 
-.btn--primary:hover:not(:disabled) {
+.btn--primary:hover:not(:disabled)::before {
   background: color-mix(in srgb, var(--color-inverse-bg) 88%, var(--color-bg));
 }
 
-.btn--primary:active:not(:disabled) {
+.btn--primary:active:not(:disabled)::before {
   background: color-mix(in srgb, var(--color-inverse-bg) 94%, var(--color-bg));
 }
 
 .btn--secondary {
   color: var(--color-text);
+}
+
+.btn--secondary::before {
   background: var(--color-surface-control);
   border-color: var(--color-border);
 }
 
-.btn--secondary:hover:not(:disabled) {
+.btn--secondary:hover:not(:disabled)::before {
   border-color: var(--color-text-muted);
 }
 
-.btn--secondary:active:not(:disabled) {
+.btn--secondary:active:not(:disabled)::before {
   background: var(--color-surface-raised);
 }
 
 .btn--ghost {
   color: var(--color-text);
-  background: transparent;
+}
+
+.btn--ghost::before {
   border-color: var(--color-border);
 }
 
-.btn--ghost:hover:not(:disabled) {
+.btn--ghost:hover:not(:disabled)::before {
   background: var(--color-surface-input);
 }
 
-.btn--ghost:active:not(:disabled) {
+.btn--ghost:active:not(:disabled)::before {
   background: var(--color-surface-raised);
 }
 
@@ -329,13 +384,21 @@ a {
   font-size: var(--font-meta-size);
   font-weight: var(--font-weight-body);
   color: var(--color-text-secondary);
-  background: transparent;
-  border-color: var(--color-border);
   border-radius: var(--radius-control-sm);
 }
 
+.btn--row::before {
+  border-color: var(--color-border);
+}
+
+/* Мелкие кнопки (иконка, действие в строке) не растут и рамку не раздвигают —
+   эффект навешен на .btn:not(.btn--icon, .btn--row):hover */
+
 .btn--row:hover:not(:disabled) {
   color: var(--color-text);
+}
+
+.btn--row:hover:not(:disabled)::before {
   background: var(--color-surface-input);
 }
 
@@ -348,6 +411,15 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .btn {
     transition: color var(--duration-fast) var(--ease-standard);
+  }
+
+  .btn:not(.btn--icon, .btn--row):hover:not(:disabled)::before {
+    transform: none;
+  }
+
+  .btn::before,
+  .btn::after {
+    transition: none;
   }
 
   :root[data-theme-switching],
