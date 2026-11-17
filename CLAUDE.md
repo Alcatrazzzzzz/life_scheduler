@@ -110,3 +110,8 @@ EF Core (SQLite, `dotnet-ef` — локальный tool в `.config/dotnet-tool
 3. Переиспользуй компоненты из `docs/design-refs/UI_KIT.md` (если существует), прежде чем создавать новые.
 4. Если нужного токена или компонента нет — предложи добавление, но не подставляй дефолтные значения.
 5. Референсные скриншоты лежат в `docs/design-refs/`. Сверяйся с ними визуально.
+
+<!-- claude-reflect: learned rules (saved from the band; edit freely) -->
+## Learned rules
+- In this app's UI, hover effects must animate smoothly with a gradual fill rather than applying instantly.
+<!-- end claude-reflect -->
