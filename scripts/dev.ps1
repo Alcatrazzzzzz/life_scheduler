@@ -40,6 +40,28 @@ $web = Start-Process 'npm.cmd' -ArgumentList 'run', 'dev' `
   -WorkingDirectory "$root\src\Web" `
   -NoNewWindow -PassThru
 
+# Открываем страницу, только когда Vite начнёт принимать соединения, — иначе браузер
+# покажет ошибку «сайт недоступен» и её придётся обновлять вручную.
+$deadline = (Get-Date).AddSeconds(30)
+$ready = $false
+while (-not $ready -and (Get-Date) -lt $deadline) {
+  $probe = [System.Net.Sockets.TcpClient]::new()
+  try {
+    $probe.Connect('localhost', 5173)
+    $ready = $true
+  } catch {
+    Start-Sleep -Milliseconds 250
+  } finally {
+    $probe.Dispose()
+  }
+}
+
+if ($ready) {
+  Start-Process 'http://localhost:5173'
+} else {
+  Write-Host 'Vite did not answer in 30s - open http://localhost:5173 manually.' -ForegroundColor Yellow
+}
+
 try {
   Wait-Process -Id $api.Id, $web.Id -ErrorAction SilentlyContinue
 } finally {
