@@ -137,6 +137,23 @@ export function formatTimeRange(start: string | null, end: string | null): strin
   return `${start.slice(0, 5)}–${end.slice(0, 5)}`
 }
 
+/**
+ * Прошедшая только неповторяющаяся запись: без времени — со следующего дня,
+ * со временем — после окончания. Повторяющиеся серии не считаются прошедшими.
+ */
+export function isEntryPast(entry: ScheduleEntry, now: Date): boolean {
+  if (entry.recurrence !== 'none') return false
+
+  const date = parseDateString(entry.date)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  if (date.getTime() !== today.getTime()) return date < today
+  if (entry.start === null) return false
+
+  const endMinutes = toMinutes(entry.end ?? entry.start)
+  return endMinutes <= now.getHours() * 60 + now.getMinutes()
+}
+
 export function formatClock(date: Date): string {
   return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`
 }

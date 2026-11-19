@@ -5,13 +5,22 @@ import {
   useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query'
-import { createSchedule, deleteSchedule, getSchedule, listSchedules } from './api'
+import {
+  createSchedule,
+  deleteAttachment,
+  deleteSchedule,
+  getSchedule,
+  listHistory,
+  listSchedules,
+  uploadAttachment,
+} from './api'
 import type { ScheduleEntry } from './api'
 
 export const scheduleKeys = {
   all: ['schedule'] as const,
   list: (from?: string, to?: string) => [...scheduleKeys.all, 'list', { from, to }] as const,
   detail: (id: string) => [...scheduleKeys.all, 'detail', id] as const,
+  history: ['schedule', 'history'] as const,
 }
 
 interface ListFilter {
@@ -58,18 +67,29 @@ function addToListCaches(queryClient: QueryClient, entry: ScheduleEntry) {
   }
 }
 
-export function useSchedules(from?: string, to?: string) {
+export function useSchedules(from?: string, to?: string, enabled = true) {
   return useQuery({
     queryKey: scheduleKeys.list(from, to),
     queryFn: () => listSchedules(from, to),
     placeholderData: keepPreviousData,
+    enabled,
   })
 }
 
-export function useSchedule(id: string) {
+export function useSchedule(id: string, enabled = true) {
   return useQuery({
     queryKey: scheduleKeys.detail(id),
     queryFn: () => getSchedule(id),
+    enabled,
+  })
+}
+
+export function useScheduleHistory() {
+  return useQuery({
+    queryKey: scheduleKeys.history,
+    queryFn: listHistory,
+    // Архиватор переводит записи раз в минуту — обновляем открытую вкладку истории.
+    refetchInterval: 60_000,
   })
 }
 
@@ -90,6 +110,37 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: deleteSchedule,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+export function useAddAttachment(scheduleId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (file: File) => uploadAttachment(scheduleId, file),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+export function useAddAttachments() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ scheduleId, files }: { scheduleId: string; files: File[] }) => {
+      for (const file of files) {
+        await uploadAttachment(scheduleId, file)
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+export function useDeleteAttachment(scheduleId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (attachmentId: string) => deleteAttachment(scheduleId, attachmentId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
   })
 }

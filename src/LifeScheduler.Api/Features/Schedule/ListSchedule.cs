@@ -14,7 +14,8 @@ public static class ListSchedule
         TimeOnly? End,
         string? Notes,
         DateTimeOffset CreatedAt,
-        ScheduleRecurrence Recurrence);
+        ScheduleRecurrence Recurrence,
+        int AttachmentCount);
 
     public static async Task<Ok<IReadOnlyList<Response>>> Handle(
         DateOnly? from,
@@ -33,7 +34,16 @@ public static class ListSchedule
 
         var rows = await query
             .Select(e => new Response(
-                e.Id, e.Title, e.Date, e.Start, e.End, e.Notes, e.CreatedAt, e.Recurrence))
+                e.Id,
+                e.Title,
+                e.Date,
+                e.Start,
+                e.End,
+                e.Notes,
+                e.CreatedAt,
+                e.Recurrence,
+                db.Set<ScheduleAttachment>()
+                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
             .ToListAsync(ct);
 
         IReadOnlyList<Response> items;

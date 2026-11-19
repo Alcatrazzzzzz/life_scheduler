@@ -7,6 +7,12 @@ public enum ScheduleRecurrence
     Weekly,
 }
 
+public enum ScheduleStatus
+{
+    Active,
+    Archived,
+}
+
 public sealed class ScheduleEntry
 {
     public Guid Id { get; init; }
@@ -18,5 +24,8 @@ public sealed class ScheduleEntry
     public TimeOnly? End { get; set; }
     public string? Notes { get; set; }
     public ScheduleRecurrence Recurrence { get; set; }
+    // Archived — прошедшая неповторяющаяся запись, переведённая в историю архиватором
+    public ScheduleStatus Status { get; set; }
+    public DateTimeOffset? ArchivedAt { get; set; }
     public DateTimeOffset CreatedAt { get; init; }
 }

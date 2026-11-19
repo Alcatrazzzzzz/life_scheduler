@@ -18,6 +18,9 @@ artifacts/
 *.db-shm
 *.db-wal
 
+# Локальные файлы вложений (dev-хранилище)
+src/LifeScheduler.Api/App_Data/attachments/
+
 # Test results
 [Tt]est[Rr]esult*/
 *.trx

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Repeat, Sun } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { Check, Repeat, Sun } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   HOURS_IN_DAY,
@@ -10,6 +10,7 @@ import {
   formatTimeRange,
   formatWeekdayShort,
   groupByDate,
+  isEntryPast,
   isSameDay,
   isToday,
   layoutTimedEntries,
@@ -17,41 +18,24 @@ import {
   toMinutes,
   toTimeString,
 } from '../calendar'
+import { NOW_TICK_MS } from '../useNow'
 
 interface WeekViewProps {
   days: Date[]
   entries: ScheduleEntry[]
+  now: Date
   onCreateAt: (date: string, start: string | null) => void
   onEntryClick: (entry: ScheduleEntry) => void
 }
 
 const HOURS = Array.from({ length: HOURS_IN_DAY }, (_, hour) => hour)
 
-/** Длительность перехода линии «сейчас» в CSS (--duration-minute) должна совпадать с этим шагом. */
-const NOW_TICK_MS = 60_000
-
-export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewProps) {
+export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const grouped = groupByDate(entries)
-  const [now, setNow] = useState(() => new Date())
   const initialHourRef = useRef(
     days.some((day) => isSameDay(day, new Date())) ? new Date().getHours() : 7,
   )
-
-  useEffect(() => {
-    let intervalId: number | undefined
-
-    // Первый тик — ровно на границе минуты, чтобы подпись и линия менялись вместе с часами.
-    const timeoutId = window.setTimeout(() => {
-      setNow(new Date())
-      intervalId = window.setInterval(() => setNow(new Date()), NOW_TICK_MS)
-    }, NOW_TICK_MS - (Date.now() % NOW_TICK_MS))
-
-    return () => {
-      window.clearTimeout(timeoutId)
-      if (intervalId !== undefined) window.clearInterval(intervalId)
-    }
-  }, [])
 
   useEffect(() => {
     const scroller = scrollRef.current
@@ -107,25 +91,38 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
                   onClick={() => onCreateAt(dayKey, null)}
                 />
                 <div className="week-allday__chips">
-                  {untimed.map((entry) => (
-                    <button
-                      type="button"
-                      className="week-chip"
-                      key={`${entry.id}-${entry.date}`}
-                      onClick={() => onEntryClick(entry)}
-                    >
-                      <span className="week-chip__title">{entry.title}</span>
-                      {entry.recurrence !== 'none' && (
-                        <Repeat
-                          className="entry-repeat"
-                          size={13}
-                          strokeWidth={1.5}
-                          role="img"
-                          aria-label="Повторяется"
-                        />
-                      )}
-                    </button>
-                  ))}
+                  {untimed.map((entry) => {
+                    const past = isEntryPast(entry, now)
+
+                    return (
+                      <button
+                        type="button"
+                        className={`week-chip${past ? ' week-chip--past' : ''}`}
+                        key={`${entry.id}-${entry.date}`}
+                        onClick={() => onEntryClick(entry)}
+                      >
+                        <span className="week-chip__title">{entry.title}</span>
+                        {past && (
+                          <Check
+                            className="entry-past"
+                            size={13}
+                            strokeWidth={1.5}
+                            role="img"
+                            aria-label="Прошло"
+                          />
+                        )}
+                        {entry.recurrence !== 'none' && (
+                          <Repeat
+                            className="entry-repeat"
+                            size={13}
+                            strokeWidth={1.5}
+                            role="img"
+                            aria-label="Повторяется"
+                          />
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )
@@ -177,12 +174,15 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
                   start + MIN_EVENT_MINUTES,
                 )
                 const height = ((end - start) / 60) * HOUR_HEIGHT
+                const past = isEntryPast(entry, now)
 
                 return (
                   <button
                     key={`${entry.id}-${entry.date}`}
                     type="button"
-                    className={`week-event${height < 44 ? ' week-event--short' : ''}`}
+                    className={`week-event${height < 44 ? ' week-event--short' : ''}${
+                      past ? ' week-event--past' : ''
+                    }`}
                     style={{
                       top: (start / 60) * HOUR_HEIGHT,
                       height,
@@ -193,6 +193,15 @@ export function WeekView({ days, entries, onCreateAt, onEntryClick }: WeekViewPr
                   >
                     <span className="week-event__time">
                       {formatTimeRange(entry.start, entry.end)}
+                      {past && (
+                        <Check
+                          className="entry-past"
+                          size={13}
+                          strokeWidth={1.5}
+                          role="img"
+                          aria-label="Прошло"
+                        />
+                      )}
                       {entry.recurrence !== 'none' && (
                         <Repeat
                           className="entry-repeat"

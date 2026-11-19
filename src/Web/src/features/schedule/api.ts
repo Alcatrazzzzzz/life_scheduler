@@ -1,5 +1,13 @@
 export type ScheduleRecurrence = 'none' | 'daily' | 'weekly'
 
+export interface ScheduleAttachment {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  createdAt: string
+}
+
 export interface ScheduleEntry {
   id: string
   title: string
@@ -9,6 +17,24 @@ export interface ScheduleEntry {
   notes: string | null
   createdAt: string
   recurrence: ScheduleRecurrence
+  attachmentCount: number
+}
+
+export interface ScheduleDetail extends ScheduleEntry {
+  attachments: ScheduleAttachment[]
+}
+
+export interface AttachmentUploadTicket {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  expiresAt: string
+  upload: {
+    url: string
+    method: string
+    headers: Record<string, string>
+  }
 }
 
 export interface CreateScheduleInput {
@@ -79,11 +105,88 @@ export async function listSchedules(from?: string, to?: string): Promise<Schedul
   return (await res.json()) as ScheduleEntry[]
 }
 
-export async function getSchedule(id: string): Promise<ScheduleEntry> {
+export async function getSchedule(id: string): Promise<ScheduleDetail> {
   const res = await fetch(`/api/schedules/${id}`)
   if (!res.ok) throw await toApiError(res)
 
-  return (await res.json()) as ScheduleEntry
+  return (await res.json()) as ScheduleDetail
+}
+
+export async function listHistory(): Promise<ScheduleEntry[]> {
+  const res = await fetch('/api/schedules/history')
+  if (!res.ok) throw await toApiError(res)
+
+  return (await res.json()) as ScheduleEntry[]
+}
+
+export async function createAttachment(
+  scheduleId: string,
+  file: File,
+): Promise<AttachmentUploadTicket> {
+  const res = await fetch(`/api/schedules/${scheduleId}/attachments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      fileName: file.name,
+      contentType: file.type || 'application/octet-stream',
+      sizeBytes: file.size,
+    }),
+  })
+  if (!res.ok) throw await toApiError(res)
+
+  return (await res.json()) as AttachmentUploadTicket
+}
+
+export async function uploadAttachmentFile(
+  ticket: AttachmentUploadTicket,
+  file: File,
+): Promise<void> {
+  const res = await fetch(ticket.upload.url, {
+    method: ticket.upload.method,
+    headers: ticket.upload.headers,
+    body: file,
+  })
+  if (!res.ok) {
+    throw new Error(`Не удалось загрузить файл: HTTP ${res.status}`)
+  }
+}
+
+export async function confirmAttachment(
+  scheduleId: string,
+  attachmentId: string,
+): Promise<void> {
+  const res = await fetch(
+    `/api/schedules/${scheduleId}/attachments/${attachmentId}/confirm`,
+    { method: 'POST' },
+  )
+  if (!res.ok) throw await toApiError(res)
+}
+
+export async function uploadAttachment(scheduleId: string, file: File): Promise<void> {
+  const ticket = await createAttachment(scheduleId, file)
+
+  try {
+    await uploadAttachmentFile(ticket, file)
+    await confirmAttachment(scheduleId, ticket.id)
+  } catch (error) {
+    // Не оставляем висящую Pending-строку, если загрузка или подтверждение не удались.
+    await deleteAttachment(scheduleId, ticket.id).catch(() => undefined)
+    throw error
+  }
+}
+
+export async function deleteAttachment(
+  scheduleId: string,
+  attachmentId: string,
+): Promise<void> {
+  const res = await fetch(`/api/schedules/${scheduleId}/attachments/${attachmentId}`, {
+    method: 'DELETE',
+  })
+  if (!res.ok) throw await toApiError(res)
+}
+
+export function attachmentDownloadUrl(scheduleId: string, attachmentId: string): string {
+  return `/api/schedules/${scheduleId}/attachments/${attachmentId}/download`
 }
 
 export async function createSchedule(input: CreateScheduleInput): Promise<ScheduleEntry> {

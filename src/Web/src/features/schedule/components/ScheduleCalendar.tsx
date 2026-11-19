@@ -19,12 +19,14 @@ import {
   weekRange,
 } from '../calendar'
 import { useSchedules } from '../queries'
+import { useNow } from '../useNow'
 import { CreateScheduleDialog, type CreateDraft } from './CreateScheduleDialog'
+import { HistoryView } from './HistoryView'
 import { MonthView } from './MonthView'
 import { ScheduleDetailsDialog } from './ScheduleDetailsDialog'
 import { WeekView } from './WeekView'
 
-type CalendarView = 'week' | 'month'
+type CalendarView = 'week' | 'month' | 'history'
 
 const LAST_MINUTE_OF_DAY = HOURS_IN_DAY * 60 - 1
 
@@ -33,9 +35,10 @@ export function ScheduleCalendar() {
   const [anchor, setAnchor] = useState(startOfToday)
   const [draft, setDraft] = useState<CreateDraft | null>(null)
   const [selectedEntry, setSelectedEntry] = useState<ScheduleEntry | null>(null)
+  const now = useNow()
 
   const range = view === 'week' ? weekRange(anchor) : monthGridRange(anchor)
-  const schedules = useSchedules(range.from, range.to)
+  const schedules = useSchedules(range.from, range.to, view !== 'history')
   const entries = schedules.data ?? []
 
   function shiftPeriod(direction: -1 | 1) {
@@ -72,30 +75,40 @@ export function ScheduleCalendar() {
   return (
     <section className="calendar">
       <div className="calendar-toolbar">
-        <div className="calendar-toolbar__nav">
-          <button
-            type="button"
-            className="btn btn--ghost btn--icon"
-            onClick={() => shiftPeriod(-1)}
-            aria-label="Предыдущий период"
-          >
-            <ChevronLeft size={18} strokeWidth={1.5} aria-hidden="true" />
-          </button>
-          <button type="button" className="btn btn--ghost" onClick={() => setAnchor(startOfToday())}>
-            Сегодня
-          </button>
-          <button
-            type="button"
-            className="btn btn--ghost btn--icon"
-            onClick={() => shiftPeriod(1)}
-            aria-label="Следующий период"
-          >
-            <ChevronRight size={18} strokeWidth={1.5} aria-hidden="true" />
-          </button>
-        </div>
+        {view !== 'history' && (
+          <div className="calendar-toolbar__nav">
+            <button
+              type="button"
+              className="btn btn--ghost btn--icon"
+              onClick={() => shiftPeriod(-1)}
+              aria-label="Предыдущий период"
+            >
+              <ChevronLeft size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setAnchor(startOfToday())}
+            >
+              Сегодня
+            </button>
+            <button
+              type="button"
+              className="btn btn--ghost btn--icon"
+              onClick={() => shiftPeriod(1)}
+              aria-label="Следующий период"
+            >
+              <ChevronRight size={18} strokeWidth={1.5} aria-hidden="true" />
+            </button>
+          </div>
+        )}
 
         <h1 className="calendar-title">
-          {view === 'week' ? formatWeekTitle(anchor) : formatMonthTitle(anchor)}
+          {view === 'history'
+            ? 'История'
+            : view === 'week'
+              ? formatWeekTitle(anchor)
+              : formatMonthTitle(anchor)}
         </h1>
 
         <div className="calendar-toolbar__right">
@@ -105,6 +118,13 @@ export function ScheduleCalendar() {
             </button>
             <button type="button" aria-pressed={view === 'month'} onClick={() => setView('month')}>
               Месяц
+            </button>
+            <button
+              type="button"
+              aria-pressed={view === 'history'}
+              onClick={() => setView('history')}
+            >
+              История
             </button>
           </div>
 
@@ -120,10 +140,13 @@ export function ScheduleCalendar() {
 
       <div className="calendar-panel">
         <div className="calendar-panel__scroll">
-          {view === 'week' ? (
+          {view === 'history' ? (
+            <HistoryView onEntryClick={setSelectedEntry} />
+          ) : view === 'week' ? (
             <WeekView
               days={weekDays(anchor)}
               entries={entries}
+              now={now}
               onCreateAt={openCreateAt}
               onEntryClick={setSelectedEntry}
             />
@@ -132,6 +155,7 @@ export function ScheduleCalendar() {
               anchor={anchor}
               days={monthGridDays(anchor)}
               entries={entries}
+              now={now}
               onCreateAt={openCreateAt}
               onEntryClick={setSelectedEntry}
             />

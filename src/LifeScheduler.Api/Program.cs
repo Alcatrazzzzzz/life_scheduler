@@ -1,7 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LifeScheduler.Api.Features.Attachments;
+using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Storage;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +15,10 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 var connectionString = builder.Configuration.GetConnectionString("LifeSchedulerDb");
 builder.Services.AddDbContext<LifeSchedulerDbContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddFileStorage(builder.Configuration);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<PastEntryArchiver>();
+builder.Services.AddHostedService<HistoryArchiverService>();
 
 var app = builder.Build();
 
@@ -26,6 +33,11 @@ else
 }
 
 app.MapScheduleEndpoints();
+app.MapAttachmentEndpoints();
+app.MapHistoryEndpoints();
+
+if (app.Environment.IsDevelopment() && app.Configuration.UsesLocalStorage())
+    app.MapLocalStorageEndpoints();
 
 app.Run();
 

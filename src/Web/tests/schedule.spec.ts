@@ -78,3 +78,78 @@ test('clicking a time slot prefills the form', async ({ page }) => {
   await dialog.getByRole('button', { name: 'Отмена' }).click()
   await expect(dialog).toBeHidden()
 })
+
+test('create schedule entry with a file from the form', async ({ page }) => {
+  const title = `С файлом ${Date.now()}`
+  const today = localDateString(new Date())
+
+  await page.goto('/schedule')
+
+  const dialog = await openCreateDialog(page)
+  await dialog.getByLabel('Название').fill(title)
+  await dialog.getByLabel('Дата').fill(today)
+  await dialog.getByLabel('Без времени').check()
+  await dialog.locator('input[type="file"]').setInputFiles({
+    name: 'план.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('план на день'),
+  })
+  await expect(dialog.getByText('план.txt')).toBeVisible()
+
+  await dialog.getByRole('button', { name: 'Сохранить' }).click()
+  await expect(dialog).toBeHidden()
+
+  const chip = page.getByRole('button', { name: new RegExp(title) })
+  await chip.click()
+
+  const details = page.getByRole('dialog')
+  await expect(details.getByRole('link', { name: 'план.txt' })).toBeVisible()
+
+  await details.getByRole('button', { name: 'Удалить план.txt' }).click()
+  await expect(details.getByRole('link', { name: 'план.txt' })).toHaveCount(0)
+  await details.getByRole('button', { name: 'Удалить', exact: true }).click()
+  await expect(page.getByRole('button', { name: new RegExp(title) })).toHaveCount(0)
+})
+
+test('history keeps past entries and lets you attach files', async ({ page }) => {
+  const title = `Смета ${Date.now()}`
+  const yesterday = localDateString(new Date(Date.now() - 24 * 60 * 60 * 1000))
+
+  await page.goto('/schedule')
+
+  const dialog = await openCreateDialog(page)
+  await dialog.getByLabel('Название').fill(title)
+  await dialog.getByLabel('Дата').fill(yesterday)
+  await dialog.getByLabel('Без времени').check()
+  await dialog.getByRole('button', { name: 'Сохранить' }).click()
+  await expect(dialog).toBeHidden()
+
+  await page.getByRole('button', { name: 'История', exact: true }).click()
+
+  const row = page.getByRole('button', { name: new RegExp(title) })
+  await expect(row).toBeVisible()
+
+  await row.click()
+  const details = page.getByRole('dialog')
+
+  await details.locator('input[type="file"]').setInputFiles({
+    name: 'смета.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('данные сметы'),
+  })
+
+  const fileLink = details.getByRole('link', { name: 'смета.txt' })
+  await expect(fileLink).toBeVisible()
+
+  const downloadPromise = page.waitForEvent('download')
+  await fileLink.click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toBe('смета.txt')
+
+  await details.getByRole('button', { name: 'Удалить смета.txt' }).click()
+  await expect(fileLink).toHaveCount(0)
+
+  await details.getByRole('button', { name: 'Удалить', exact: true }).click()
+  await expect(page.getByRole('button', { name: new RegExp(title) })).toHaveCount(0)
+})
+

@@ -15,6 +15,11 @@ public sealed class ScheduleEntryConfiguration : IEntityTypeConfiguration<Schedu
             .HasConversion<string>()
             .HasMaxLength(16)
             .HasDefaultValue(ScheduleRecurrence.None);
+        builder
+            .Property(e => e.Status)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .HasDefaultValue(ScheduleStatus.Active);
         builder.HasIndex(e => e.Date);
     }
 }

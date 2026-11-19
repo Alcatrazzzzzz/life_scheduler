@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Tests.Support;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LifeScheduler.Tests.Features.Schedule;

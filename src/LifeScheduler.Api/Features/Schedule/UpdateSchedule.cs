@@ -1,4 +1,5 @@
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Schedule;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,7 @@ public static class UpdateSchedule
         Guid id,
         UpdateScheduleRequest request,
         LifeSchedulerDbContext db,
+        TimeProvider time,
         CancellationToken ct)
     {
         var errors = new Dictionary<string, string[]>();
@@ -44,6 +46,13 @@ public static class UpdateSchedule
         entry.End = request.End;
         entry.Notes = request.Notes;
         entry.Recurrence = request.Recurrence;
+
+        var isPast = entry.Recurrence == ScheduleRecurrence.None
+                     && PastEntryRules.IsPast(
+                         entry.Date, entry.Start, entry.End, time.GetLocalNow().DateTime);
+
+        entry.Status = isPast ? ScheduleStatus.Archived : ScheduleStatus.Active;
+        entry.ArchivedAt = isPast ? entry.ArchivedAt ?? time.GetUtcNow() : null;
 
         await db.SaveChangesAsync(ct);
 

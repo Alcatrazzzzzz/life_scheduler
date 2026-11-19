@@ -1,8 +1,9 @@
-import { Repeat } from 'lucide-react'
+import { Check, Repeat } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   WEEKDAY_LABELS,
   groupByDate,
+  isEntryPast,
   isToday,
   toDateString,
 } from '../calendar'
@@ -11,13 +12,14 @@ interface MonthViewProps {
   anchor: Date
   days: Date[]
   entries: ScheduleEntry[]
+  now: Date
   onCreateAt: (date: string, start: string | null) => void
   onEntryClick: (entry: ScheduleEntry) => void
 }
 
 const MAX_CHIPS = 3
 
-export function MonthView({ anchor, days, entries, onCreateAt, onEntryClick }: MonthViewProps) {
+export function MonthView({ anchor, days, entries, now, onCreateAt, onEntryClick }: MonthViewProps) {
   const grouped = groupByDate(entries)
 
   return (
@@ -54,28 +56,41 @@ export function MonthView({ anchor, days, entries, onCreateAt, onEntryClick }: M
               <span className="month-cell__number">{day.getDate()}</span>
 
               <div className="month-cell__entries">
-                {visible.map((entry) => (
-                  <button
-                    type="button"
-                    className="month-chip"
-                    key={`${entry.id}-${entry.date}`}
-                    onClick={() => onEntryClick(entry)}
-                  >
-                    {entry.start && (
-                      <span className="month-chip__time">{entry.start.slice(0, 5)}</span>
-                    )}
-                    <span className="month-chip__title">{entry.title}</span>
-                    {entry.recurrence !== 'none' && (
-                      <Repeat
-                        className="entry-repeat month-chip__repeat"
-                        size={13}
-                        strokeWidth={1.5}
-                        role="img"
-                        aria-label="Повторяется"
-                      />
-                    )}
-                  </button>
-                ))}
+                {visible.map((entry) => {
+                  const past = isEntryPast(entry, now)
+
+                  return (
+                    <button
+                      type="button"
+                      className={`month-chip${past ? ' month-chip--past' : ''}`}
+                      key={`${entry.id}-${entry.date}`}
+                      onClick={() => onEntryClick(entry)}
+                    >
+                      {entry.start && (
+                        <span className="month-chip__time">{entry.start.slice(0, 5)}</span>
+                      )}
+                      <span className="month-chip__title">{entry.title}</span>
+                      {past && (
+                        <Check
+                          className="entry-past month-chip__past"
+                          size={13}
+                          strokeWidth={1.5}
+                          role="img"
+                          aria-label="Прошло"
+                        />
+                      )}
+                      {entry.recurrence !== 'none' && (
+                        <Repeat
+                          className="entry-repeat month-chip__repeat"
+                          size={13}
+                          strokeWidth={1.5}
+                          role="img"
+                          aria-label="Повторяется"
+                        />
+                      )}
+                    </button>
+                  )
+                })}
                 {hidden > 0 && <span className="month-cell__more">ещё {hidden}</span>}
               </div>
             </div>
