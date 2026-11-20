@@ -23,7 +23,8 @@ internal static class ScheduleTestHelpers
         DateOnly? date = null,
         TimeOnly? start = null,
         TimeOnly? end = null,
-        ScheduleRecurrence recurrence = ScheduleRecurrence.None)
+        ScheduleRecurrence recurrence = ScheduleRecurrence.None,
+        ScheduleKind kind = ScheduleKind.Event)
     {
         var request = new CreateScheduleRequest(
             title,
@@ -31,7 +32,8 @@ internal static class ScheduleTestHelpers
             start,
             end,
             null,
-            recurrence);
+            recurrence,
+            kind);
 
         var response = await client.PostAsJsonAsync("/api/schedules", request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);

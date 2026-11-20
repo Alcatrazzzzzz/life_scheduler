@@ -11,7 +11,8 @@ public sealed record UpdateScheduleRequest(
     TimeOnly? Start,
     TimeOnly? End,
     string? Notes,
-    ScheduleRecurrence Recurrence = ScheduleRecurrence.None);
+    ScheduleRecurrence Recurrence = ScheduleRecurrence.None,
+    ScheduleKind Kind = ScheduleKind.Event);
 
 public static class UpdateSchedule
 {
@@ -22,7 +23,7 @@ public static class UpdateSchedule
         TimeProvider time,
         CancellationToken ct)
     {
-        var errors = new Dictionary<string, string[]>();
+        var errors = ScheduleTypeRules.Validate(request.Kind, request.Recurrence);
 
         if (string.IsNullOrWhiteSpace(request.Title))
             errors[nameof(request.Title)] = ["Title обязателен."];
@@ -41,15 +42,21 @@ public static class UpdateSchedule
             return TypedResults.NotFound();
 
         entry.Title = request.Title.Trim();
+        entry.Kind = request.Kind;
         entry.Date = request.Date;
         entry.Start = request.Start;
         entry.End = request.End;
         entry.Notes = request.Notes;
         entry.Recurrence = request.Recurrence;
 
-        var isPast = entry.Recurrence == ScheduleRecurrence.None
-                     && PastEntryRules.IsPast(
-                         entry.Date, entry.Start, entry.End, time.GetLocalNow().DateTime);
+        if (entry.Kind != ScheduleKind.Task)
+            entry.CompletedAt = null;
+
+        var localNow = time.GetLocalNow().DateTime;
+        var isPast = ScheduleTypeRules.IsArchivable(entry.Kind, entry.Recurrence)
+                     && (entry.CompletedAt is not null
+                         || ScheduleTypeRules.HasPassed(
+                             entry.Kind, entry.Date, entry.Start, entry.End, localNow));
 
         entry.Status = isPast ? ScheduleStatus.Archived : ScheduleStatus.Active;
         entry.ArchivedAt = isPast ? entry.ArchivedAt ?? time.GetUtcNow() : null;

@@ -5,8 +5,9 @@ using Microsoft.EntityFrameworkCore;
 namespace LifeScheduler.Api.Features.History;
 
 /// <summary>
-/// Переводит прошедшие неповторяющиеся записи в историю. Вызывается фоновым сервисом
+/// Переводит прошедшие записи в историю. Вызывается фоновым сервисом
 /// и вручную из тестов; также подхватывает строки, созданные до появления флага.
+/// События уходят сразу после окончания, задачи — после конца дня.
 /// </summary>
 public sealed class PastEntryArchiver(LifeSchedulerDbContext db, TimeProvider time)
 {
@@ -18,11 +19,13 @@ public sealed class PastEntryArchiver(LifeSchedulerDbContext db, TimeProvider ti
         var candidates = await db.Schedules
             .Where(e => e.Status == ScheduleStatus.Active
                         && e.Recurrence == ScheduleRecurrence.None
+                        && e.Kind != ScheduleKind.Habit
                         && e.Date <= today)
             .ToListAsync(ct);
 
         var past = candidates
-            .Where(e => PastEntryRules.IsPast(e.Date, e.Start, e.End, localNow))
+            .Where(e => ScheduleTypeRules.HasPassed(
+                e.Kind, e.Date, e.Start, e.End, localNow))
             .ToList();
 
         if (past.Count == 0)

@@ -1,4 +1,4 @@
-import { Paperclip } from 'lucide-react'
+import { Check, Paperclip, X } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   formatFullDate,
@@ -50,6 +50,18 @@ export function HistoryView({ onEntryClick }: HistoryViewProps) {
                     {formatTimeRange(entry.start, entry.end)}
                   </span>
                   <span className="history-row__title">{entry.title}</span>
+                  {entry.result === 'completed' && (
+                    <span className="history-row__result history-row__result--completed">
+                      <Check size={13} strokeWidth={1.5} aria-hidden="true" />
+                      Выполнено
+                    </span>
+                  )}
+                  {entry.result === 'missed' && (
+                    <span className="history-row__result history-row__result--missed">
+                      <X size={13} strokeWidth={1.5} aria-hidden="true" />
+                      Не выполнена
+                    </span>
+                  )}
                   {entry.attachmentCount > 0 && (
                     <span className="history-row__files">
                       <Paperclip size={13} strokeWidth={1.5} aria-hidden="true" />

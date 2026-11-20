@@ -20,6 +20,11 @@ public sealed class ScheduleEntryConfiguration : IEntityTypeConfiguration<Schedu
             .HasConversion<string>()
             .HasMaxLength(16)
             .HasDefaultValue(ScheduleStatus.Active);
+        builder
+            .Property(e => e.Kind)
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .HasDefaultValue(ScheduleKind.Event);
         builder.HasIndex(e => e.Date);
     }
 }

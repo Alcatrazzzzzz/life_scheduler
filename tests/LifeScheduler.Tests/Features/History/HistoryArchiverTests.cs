@@ -105,6 +105,68 @@ public sealed class HistoryArchiverTests
         Assert.Null(entry.ArchivedAt);
     }
 
+    [Fact]
+    public async Task Archiver_MarksPastTaskAsMissedAfterDayEnd()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Вчерашняя задача", new DateOnly(2026, 11, 19),
+            kind: ScheduleKind.Task);
+
+        await factory.ArchivePastEntriesAsync();
+
+        var entry = await LoadAsync(factory, id);
+        Assert.Equal(ScheduleStatus.Archived, entry.Status);
+        Assert.Null(entry.CompletedAt);
+
+        var history = await client.GetFromJsonAsync<List<ListHistory.Response>>(
+            "/api/schedules/history", ScheduleTestHelpers.JsonOptions);
+
+        Assert.NotNull(history);
+        var item = Assert.Single(history);
+        Assert.Equal(id, item.Id);
+        Assert.Equal(ScheduleKind.Task, item.Kind);
+        Assert.Equal(HistoryResult.Missed, item.Result);
+    }
+
+    [Fact]
+    public async Task Archiver_KeepsTodaysTaskActiveEvenAfterItsTimePassed()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Сегодняшняя задача", new DateOnly(2026, 11, 20),
+            new TimeOnly(10, 0), new TimeOnly(11, 0), kind: ScheduleKind.Task);
+
+        await factory.ArchivePastEntriesAsync();
+
+        var entry = await LoadAsync(factory, id);
+        Assert.Equal(ScheduleStatus.Active, entry.Status);
+        Assert.Null(entry.ArchivedAt);
+    }
+
+    [Fact]
+    public async Task Archiver_DoesNotArchiveHabits()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", new DateOnly(2026, 11, 19),
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+
+        await factory.ArchivePastEntriesAsync();
+
+        var entry = await LoadAsync(factory, id);
+        Assert.Equal(ScheduleStatus.Active, entry.Status);
+    }
+
     private static async Task SetStatusAsync(
         ScheduleApiFactory factory,
         Guid id,

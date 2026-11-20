@@ -17,7 +17,7 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.15");
 
-            modelBuilder.Entity("LifeScheduler.Api.Features.Schedule.ScheduleAttachment", b =>
+            modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleAttachment", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -73,6 +73,9 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                     b.Property<DateTimeOffset?>("ArchivedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
@@ -81,6 +84,13 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
 
                     b.Property<TimeOnly?>("End")
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("Event");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(2000)
@@ -115,7 +125,39 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                     b.ToTable("Schedules");
                 });
 
-            modelBuilder.Entity("LifeScheduler.Api.Features.Schedule.ScheduleAttachment", b =>
+            modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleOccurrenceCompletion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CompletedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ScheduleEntryId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScheduleEntryId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("OccurrenceCompletions");
+                });
+
+            modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleAttachment", b =>
+                {
+                    b.HasOne("LifeScheduler.Api.Shared.Data.ScheduleEntry", null)
+                        .WithMany()
+                        .HasForeignKey("ScheduleEntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleOccurrenceCompletion", b =>
                 {
                     b.HasOne("LifeScheduler.Api.Shared.Data.ScheduleEntry", null)
                         .WithMany()

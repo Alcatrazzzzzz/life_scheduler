@@ -1,4 +1,5 @@
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Schedule;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ public static class ListSchedule
         string? Notes,
         DateTimeOffset CreatedAt,
         ScheduleRecurrence Recurrence,
+        ScheduleKind Kind,
         int AttachmentCount);
 
     public static async Task<Ok<IReadOnlyList<Response>>> Handle(
@@ -23,7 +25,9 @@ public static class ListSchedule
         LifeSchedulerDbContext db,
         CancellationToken ct)
     {
-        var query = db.Schedules.AsNoTracking();
+        var query = db.Schedules.AsNoTracking()
+            // Календарь показывает только актуальное: выполненное и прошедшее живёт в истории.
+            .Where(e => e.Status == ScheduleStatus.Active);
 
         // Повторяющиеся записи отбираем по дате первого вхождения — дальше они разворачиваются в даты диапазона.
         if (from is not null)
@@ -42,58 +46,54 @@ public static class ListSchedule
                 e.Notes,
                 e.CreatedAt,
                 e.Recurrence,
+                e.Kind,
                 db.Set<ScheduleAttachment>()
                     .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
             .ToListAsync(ct);
 
-        IReadOnlyList<Response> items;
         if (from is null || to is null)
         {
             // Без диапазона повторы не разворачиваем: отдаём каждую запись одним вхождением.
-            items = rows;
-        }
-        else
-        {
-            items = rows
-                .SelectMany(row => OccurrenceDates(row.Date, row.Recurrence, from.Value, to.Value)
-                    .Select(date => row with { Date = date }))
-                .ToList();
+            return TypedResults.Ok<IReadOnlyList<Response>>(Order(rows));
         }
 
-        return TypedResults.Ok<IReadOnlyList<Response>>(
-            items.OrderBy(e => e.Date)
-                .ThenBy(e => e.Start.HasValue ? 1 : 0)
-                .ThenBy(e => e.Start)
-                .ToList());
+        var completedByHabit = await LoadCompletedOccurrencesAsync(db, rows, ct);
+
+        var items = rows
+            .SelectMany(row => OccurrenceRules.Dates(row.Date, row.Recurrence, from.Value, to.Value)
+                .Where(date => !completedByHabit.Contains((row.Id, date)))
+                .Select(date => row with { Date = date }))
+            .ToList();
+
+        return TypedResults.Ok<IReadOnlyList<Response>>(Order(items));
     }
 
-    private static IEnumerable<DateOnly> OccurrenceDates(
-        DateOnly seed,
-        ScheduleRecurrence recurrence,
-        DateOnly from,
-        DateOnly to)
+    private static async Task<HashSet<(Guid Id, DateOnly Date)>> LoadCompletedOccurrencesAsync(
+        LifeSchedulerDbContext db,
+        IReadOnlyList<Response> rows,
+        CancellationToken ct)
     {
-        if (recurrence == ScheduleRecurrence.None)
-        {
-            if (seed >= from && seed <= to)
-                yield return seed;
+        var habitIds = rows
+            .Where(row => row.Kind == ScheduleKind.Habit)
+            .Select(row => row.Id)
+            .Distinct()
+            .ToList();
 
-            yield break;
-        }
+        if (habitIds.Count == 0)
+            return [];
 
-        if (recurrence == ScheduleRecurrence.Daily)
-        {
-            for (var date = seed > from ? seed : from; date <= to; date = date.AddDays(1))
-                yield return date;
+        var completed = await db.Set<ScheduleOccurrenceCompletion>()
+            .AsNoTracking()
+            .Where(c => habitIds.Contains(c.ScheduleEntryId))
+            .Select(c => new { c.ScheduleEntryId, c.Date })
+            .ToListAsync(ct);
 
-            yield break;
-        }
-
-        // Weekly: шагаем от seed, но начинаем с первого вхождения не раньше from.
-        var aligned = seed > from ? seed : from;
-        var offset = ((int)seed.DayOfWeek - (int)aligned.DayOfWeek + 7) % 7;
-
-        for (var date = aligned.AddDays(offset); date <= to; date = date.AddDays(7))
-            yield return date;
+        return completed.Select(c => (c.ScheduleEntryId, c.Date)).ToHashSet();
     }
+
+    private static List<Response> Order(IEnumerable<Response> items) =>
+        items.OrderBy(e => e.Date)
+            .ThenBy(e => e.Start.HasValue ? 1 : 0)
+            .ThenBy(e => e.Start)
+            .ToList();
 }

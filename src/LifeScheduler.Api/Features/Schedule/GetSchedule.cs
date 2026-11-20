@@ -22,6 +22,8 @@ public static class GetSchedule
         string? Notes,
         DateTimeOffset CreatedAt,
         ScheduleRecurrence Recurrence,
+        ScheduleKind Kind,
+        DateTimeOffset? CompletedAt,
         IReadOnlyList<AttachmentResponse> Attachments);
 
     public static async Task<Results<Ok<Response>, NotFound>> Handle(
@@ -42,6 +44,8 @@ public static class GetSchedule
                 e.Notes,
                 e.CreatedAt,
                 e.Recurrence,
+                e.Kind,
+                e.CompletedAt,
             })
             .FirstOrDefaultAsync(ct);
 
@@ -69,6 +73,8 @@ public static class GetSchedule
             entry.Notes,
             entry.CreatedAt,
             entry.Recurrence,
+            entry.Kind,
+            entry.CompletedAt,
             attachmentResponses);
 
         return TypedResults.Ok(response);

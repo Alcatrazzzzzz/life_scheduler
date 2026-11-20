@@ -10,7 +10,8 @@ public sealed record CreateScheduleRequest(
     TimeOnly? Start,
     TimeOnly? End,
     string? Notes,
-    ScheduleRecurrence Recurrence = ScheduleRecurrence.None);
+    ScheduleRecurrence Recurrence = ScheduleRecurrence.None,
+    ScheduleKind Kind = ScheduleKind.Event);
 
 public static class CreateSchedule
 {
@@ -23,6 +24,7 @@ public static class CreateSchedule
         string? Notes,
         DateTimeOffset CreatedAt,
         ScheduleRecurrence Recurrence,
+        ScheduleKind Kind,
         int AttachmentCount);
 
     public static async Task<Results<Created<Response>, ValidationProblem>> Handle(
@@ -31,7 +33,7 @@ public static class CreateSchedule
         TimeProvider time,
         CancellationToken ct)
     {
-        var errors = new Dictionary<string, string[]>();
+        var errors = ScheduleTypeRules.Validate(request.Kind, request.Recurrence);
 
         if (string.IsNullOrWhiteSpace(request.Title))
             errors[nameof(request.Title)] = ["Title обязателен."];
@@ -44,14 +46,16 @@ public static class CreateSchedule
         if (errors.Count > 0)
             return TypedResults.ValidationProblem(errors);
 
-        var isPast = request.Recurrence == ScheduleRecurrence.None
-                     && PastEntryRules.IsPast(
-                         request.Date, request.Start, request.End, time.GetLocalNow().DateTime);
+        var localNow = time.GetLocalNow().DateTime;
+        var isPast = ScheduleTypeRules.IsArchivable(request.Kind, request.Recurrence)
+                     && ScheduleTypeRules.HasPassed(
+                         request.Kind, request.Date, request.Start, request.End, localNow);
 
         var entry = new ScheduleEntry
         {
             Id = Guid.NewGuid(),
             Title = request.Title.Trim(),
+            Kind = request.Kind,
             Date = request.Date,
             Start = request.Start,
             End = request.End,
@@ -74,6 +78,7 @@ public static class CreateSchedule
             entry.Notes,
             entry.CreatedAt,
             entry.Recurrence,
+            entry.Kind,
             AttachmentCount: 0);
 
         return TypedResults.Created($"/api/schedules/{entry.Id}", response);

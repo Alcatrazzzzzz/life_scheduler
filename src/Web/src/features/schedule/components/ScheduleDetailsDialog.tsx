@@ -1,12 +1,19 @@
 import { useState, type ChangeEvent } from 'react'
 import { Download, FileImage, FileText, Paperclip, Repeat, Trash2 } from 'lucide-react'
 import { attachmentDownloadUrl } from '../api'
-import type { ScheduleEntry, ScheduleRecurrence } from '../api'
+import type { ScheduleEntry, ScheduleKind, ScheduleRecurrence } from '../api'
 import { attachmentPreviewKind } from '../attachmentPreview'
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../attachmentLimits'
 import { formatFullDate, formatTimeRange, parseDateString } from '../calendar'
 import { formatFileSize } from '../format'
-import { useAddAttachment, useDeleteAttachment, useDeleteSchedule, useSchedule } from '../queries'
+import {
+  useAddAttachment,
+  useCompleteSchedule,
+  useDeleteAttachment,
+  useDeleteSchedule,
+  useSchedule,
+  useUncompleteSchedule,
+} from '../queries'
 import { AttachmentPreviewDialog } from './AttachmentPreviewDialog'
 import { Modal } from './Modal'
 
@@ -14,6 +21,12 @@ const RECURRENCE_LABELS: Record<ScheduleRecurrence, string> = {
   none: 'Не повторять',
   daily: 'Каждый день',
   weekly: 'Каждую неделю',
+}
+
+const KIND_LABELS: Record<ScheduleKind, string> = {
+  event: 'Событие',
+  task: 'Задача',
+  habit: 'Привычка',
 }
 
 interface ScheduleDetailsDialogProps {
@@ -26,18 +39,46 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
   const detail = useSchedule(entry.id, !removeSchedule.isPending)
   const addAttachment = useAddAttachment(entry.id)
   const removeAttachment = useDeleteAttachment(entry.id)
+  const completeSchedule = useCompleteSchedule()
+  const uncompleteSchedule = useUncompleteSchedule()
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null)
+  const [completed, setCompleted] = useState(entry.result === 'completed')
 
   const recurring = entry.recurrence !== 'none'
+  const completable = entry.kind === 'task' || entry.kind === 'habit'
+  const completionBusy = completeSchedule.isPending || uncompleteSchedule.isPending
+  const completionError = completeSchedule.error ?? uncompleteSchedule.error
+  const completionHint =
+    entry.kind === 'habit'
+      ? 'Отметка относится только к этому дню.'
+      : entry.result === 'missed'
+        ? 'Задача была пропущена — можно отметить задним числом.'
+        : 'Отмеченная задача перейдёт в историю.'
   const attachments = detail.data?.attachments ?? []
   const previewAttachment =
     attachments.find((attachment) => attachment.id === previewAttachmentId) ?? null
   const attachmentBusy = removeAttachment.isPending || removeSchedule.isPending
-  const deletingSchedule = removeSchedule.isPending || removeAttachment.isPending || addAttachment.isPending
+  const deletingSchedule =
+    removeSchedule.isPending ||
+    removeAttachment.isPending ||
+    addAttachment.isPending ||
+    completionBusy
 
   function handleDelete() {
     removeSchedule.mutate(entry.id, { onSuccess: onClose })
+  }
+
+  function toggleCompletion() {
+    const next = !completed
+    setCompleted(next)
+
+    const mutation = next ? completeSchedule : uncompleteSchedule
+    mutation.mutate(
+      { id: entry.id, date: entry.date },
+      // Откатываем чекбокс, если сервер отклонил отметку.
+      { onError: () => setCompleted(!next) },
+    )
   }
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -81,6 +122,10 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
         <div className="entry-details">
           <dl className="entry-details__meta">
             <div>
+              <dt>Тип</dt>
+              <dd>{KIND_LABELS[entry.kind]}</dd>
+            </div>
+            <div>
               <dt>Дата</dt>
               <dd>{formatFullDate(parseDateString(entry.date))}</dd>
             </div>
@@ -95,7 +140,7 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
               </div>
             )}
           </dl>
-  
+
           {recurring && (
             <p className="entry-details__hint">
               <Repeat size={14} strokeWidth={1.5} aria-hidden="true" />
@@ -186,11 +231,27 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
               <p className="schedule-error">{removeAttachment.error.message}</p>
             )}
           </section>
-  
+
+          {completable && (
+            <div className="entry-complete">
+              <label className="entry-complete__control">
+                <input
+                  type="checkbox"
+                  checked={completed}
+                  onChange={toggleCompletion}
+                  disabled={completionBusy}
+                />
+                <span>Выполнено</span>
+              </label>
+              <span className="entry-complete__hint">{completionHint}</span>
+              {completionError && <p className="schedule-error">{completionError.message}</p>}
+            </div>
+          )}
+
           {removeSchedule.isError && (
             <p className="schedule-error">{removeSchedule.error.message}</p>
           )}
-  
+
           <div className="modal__actions">
             <button type="button" className="btn btn--ghost" onClick={onClose}>
               Закрыть

@@ -12,6 +12,7 @@ function entry(overrides: Partial<ScheduleEntry> = {}): ScheduleEntry {
     notes: null,
     createdAt: '2026-11-20T09:00:00+00:00',
     recurrence: 'none',
+    kind: 'event',
     attachmentCount: 0,
     ...overrides,
   }

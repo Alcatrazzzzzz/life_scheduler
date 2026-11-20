@@ -1,4 +1,6 @@
 export type ScheduleRecurrence = 'none' | 'daily' | 'weekly'
+export type ScheduleKind = 'event' | 'task' | 'habit'
+export type ScheduleResult = 'none' | 'completed' | 'missed'
 
 export interface ScheduleAttachment {
   id: string
@@ -17,10 +19,14 @@ export interface ScheduleEntry {
   notes: string | null
   createdAt: string
   recurrence: ScheduleRecurrence
+  kind: ScheduleKind
   attachmentCount: number
+  // Приходит только в истории: итог выполнения задачи или дня привычки.
+  result?: ScheduleResult
 }
 
 export interface ScheduleDetail extends ScheduleEntry {
+  completedAt: string | null
   attachments: ScheduleAttachment[]
 }
 
@@ -44,6 +50,7 @@ export interface CreateScheduleInput {
   end: string | null
   notes?: string
   recurrence: ScheduleRecurrence
+  kind: ScheduleKind
 }
 
 export interface UpdateScheduleInput {
@@ -53,6 +60,7 @@ export interface UpdateScheduleInput {
   end: string | null
   notes?: string
   recurrence: ScheduleRecurrence
+  kind: ScheduleKind
 }
 
 async function toApiError(res: Response): Promise<Error> {
@@ -223,5 +231,22 @@ export async function updateSchedule(id: string, input: UpdateScheduleInput): Pr
 
 export async function deleteSchedule(id: string): Promise<void> {
   const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw await toApiError(res)
+}
+
+export async function completeSchedule(id: string, date: string): Promise<void> {
+  const res = await fetch(`/api/schedules/${id}/completion`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date }),
+  })
+  if (!res.ok) throw await toApiError(res)
+}
+
+export async function uncompleteSchedule(id: string, date: string): Promise<void> {
+  const params = new URLSearchParams({ date })
+  const res = await fetch(`/api/schedules/${id}/completion?${params.toString()}`, {
+    method: 'DELETE',
+  })
   if (!res.ok) throw await toApiError(res)
 }

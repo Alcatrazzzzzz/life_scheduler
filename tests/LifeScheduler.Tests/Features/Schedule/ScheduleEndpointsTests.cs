@@ -136,7 +136,9 @@ public sealed class ScheduleEndpointsTests
     [Fact]
     public async Task ListSchedule_ShowsEntriesWithoutTimeBeforeTimedEntries()
     {
-        using var factory = new ScheduleApiFactory();
+        // Полдень фиксирован, иначе запись на 18:00 успевает уйти в историю и тест зависит от часов прогона.
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
         factory.InitializeDatabase();
         var client = factory.CreateClient();
 

@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { FileText, Paperclip, Trash2 } from 'lucide-react'
-import type { ScheduleRecurrence } from '../api'
+import type { ScheduleKind, ScheduleRecurrence } from '../api'
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../attachmentLimits'
 import { formatFileSize } from '../format'
 import { useAddAttachments, useCreateSchedule } from '../queries'
@@ -20,6 +20,7 @@ interface FormState {
   notes: string
   untimed: boolean
   recurrence: ScheduleRecurrence
+  kind: ScheduleKind
 }
 
 interface CreateScheduleDialogProps {
@@ -36,11 +37,16 @@ function formFromDraft(draft: CreateDraft): FormState {
     notes: '',
     untimed: draft.start === null,
     recurrence: 'none',
+    kind: 'event',
   }
 }
 
 function isRecurrence(value: string): value is ScheduleRecurrence {
   return value === 'none' || value === 'daily' || value === 'weekly'
+}
+
+function isKind(value: string): value is ScheduleKind {
+  return value === 'event' || value === 'task' || value === 'habit'
 }
 
 export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogProps) {
@@ -59,6 +65,20 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
 
   function update<K extends keyof FormState>(field: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateKind(kind: ScheduleKind) {
+    setForm((current) => ({
+      ...current,
+      kind,
+      // Задача разовая, привычка обязана повторяться — не даём несогласованное состояние.
+      recurrence:
+        kind === 'task'
+          ? 'none'
+          : kind === 'habit' && current.recurrence === 'none'
+            ? 'daily'
+            : current.recurrence,
+    }))
   }
 
   function addFiles(event: ChangeEvent<HTMLInputElement>) {
@@ -115,6 +135,7 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
           end: form.untimed ? null : form.end,
           notes: notes.length > 0 ? notes : undefined,
           recurrence: form.recurrence,
+          kind: form.kind,
         })
 
         scheduleId = created.id
@@ -147,6 +168,20 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
               onChange={(e) => update('title', e.target.value)}
               required
             />
+          </label>
+
+          <label>
+            Тип
+            <select
+              value={form.kind}
+              onChange={(e) => {
+                if (isKind(e.target.value)) updateKind(e.target.value)
+              }}
+            >
+              <option value="event">Событие</option>
+              <option value="task">Задача</option>
+              <option value="habit">Привычка</option>
+            </select>
           </label>
 
           <label>
@@ -192,19 +227,21 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
             </div>
           )}
 
-          <label>
-            Повторение
-            <select
-              value={form.recurrence}
-              onChange={(e) => {
-                if (isRecurrence(e.target.value)) update('recurrence', e.target.value)
-              }}
-            >
-              <option value="none">Не повторять</option>
-              <option value="daily">Каждый день</option>
-              <option value="weekly">Каждую неделю</option>
-            </select>
-          </label>
+          {form.kind !== 'task' && (
+            <label>
+              Повторение
+              <select
+                value={form.recurrence}
+                onChange={(e) => {
+                  if (isRecurrence(e.target.value)) update('recurrence', e.target.value)
+                }}
+              >
+                {form.kind === 'event' && <option value="none">Не повторять</option>}
+                <option value="daily">Каждый день</option>
+                <option value="weekly">Каждую неделю</option>
+              </select>
+            </label>
+          )}
 
           <label>
             Заметки

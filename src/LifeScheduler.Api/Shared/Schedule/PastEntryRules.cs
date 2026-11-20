@@ -14,4 +14,8 @@ public static class PastEntryRules
 
         return (end ?? start).Value <= TimeOnly.FromDateTime(localNow);
     }
+
+    /// <summary>День закончился: задачи получают статус «не выполнена» только после полуночи.</summary>
+    public static bool IsDayOver(DateOnly date, DateTime localNow) =>
+        date < DateOnly.FromDateTime(localNow);
 }

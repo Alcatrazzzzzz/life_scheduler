@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LifeScheduler.Api.Features.Attachments;
+using LifeScheduler.Api.Features.Completion;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
@@ -35,6 +36,7 @@ else
 app.MapScheduleEndpoints();
 app.MapAttachmentEndpoints();
 app.MapHistoryEndpoints();
+app.MapCompletionEndpoints();
 
 if (app.Environment.IsDevelopment() && app.Configuration.UsesLocalStorage())
     app.MapLocalStorageEndpoints();

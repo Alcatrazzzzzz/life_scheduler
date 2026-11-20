@@ -7,6 +7,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query'
 import {
+  completeSchedule,
   createSchedule,
   deleteAttachment,
   deleteSchedule,
@@ -14,6 +15,7 @@ import {
   getSchedule,
   listHistory,
   listSchedules,
+  uncompleteSchedule,
   uploadAttachment,
 } from './api'
 import type { ScheduleEntry } from './api'
@@ -225,6 +227,24 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: deleteSchedule,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+export function useCompleteSchedule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, date }: { id: string; date: string }) => completeSchedule(id, date),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+  })
+}
+
+export function useUncompleteSchedule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, date }: { id: string; date: string }) => uncompleteSchedule(id, date),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
   })
 }

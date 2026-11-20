@@ -6,6 +6,8 @@ public sealed class LifeSchedulerDbContext(DbContextOptions<LifeSchedulerDbConte
     : DbContext(options)
 {
     public DbSet<ScheduleEntry> Schedules => Set<ScheduleEntry>();
+    public DbSet<ScheduleOccurrenceCompletion> OccurrenceCompletions =>
+        Set<ScheduleOccurrenceCompletion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
