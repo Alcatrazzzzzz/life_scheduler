@@ -22,6 +22,7 @@ import { useSchedules } from '../queries'
 import { useNow } from '../useNow'
 import { CreateScheduleDialog, type CreateDraft } from './CreateScheduleDialog'
 import { HistoryView } from './HistoryView'
+import { Loader } from './Loader'
 import { MonthView } from './MonthView'
 import { ScheduleDetailsDialog } from './ScheduleDetailsDialog'
 import { WeekView } from './WeekView'
@@ -40,6 +41,9 @@ export function ScheduleCalendar() {
   const range = view === 'week' ? weekRange(anchor) : monthGridRange(anchor)
   const schedules = useSchedules(range.from, range.to, view !== 'history')
   const entries = schedules.data ?? []
+  // keepPreviousData держит старые данные при смене периода — лоадер нужен только
+  // на первой загрузке, когда показывать ещё нечего.
+  const isLoading = schedules.isPending && view !== 'history'
 
   function shiftPeriod(direction: -1 | 1) {
     setAnchor((current) =>
@@ -136,11 +140,12 @@ export function ScheduleCalendar() {
       </div>
 
       {schedules.isError && <p className="schedule-error">{schedules.error.message}</p>}
-      {schedules.isPending && <p className="calendar-status">Загрузка…</p>}
 
       <div className="calendar-panel">
         <div className="calendar-panel__scroll">
-          {view === 'history' ? (
+          {isLoading ? (
+            <Loader />
+          ) : view === 'history' ? (
             <HistoryView onEntryClick={setSelectedEntry} />
           ) : view === 'week' ? (
             <WeekView

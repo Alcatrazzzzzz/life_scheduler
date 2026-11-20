@@ -7,6 +7,7 @@ import {
   parseDateString,
 } from '../calendar'
 import { useScheduleHistory } from '../queries'
+import { Loader } from './Loader'
 
 interface HistoryViewProps {
   onEntryClick: (entry: ScheduleEntry) => void
@@ -16,7 +17,7 @@ export function HistoryView({ onEntryClick }: HistoryViewProps) {
   const history = useScheduleHistory()
 
   if (history.isPending) {
-    return <p className="calendar-status">Загрузка…</p>
+    return <Loader label="Загрузка истории…" />
   }
 
   if (history.isError) {

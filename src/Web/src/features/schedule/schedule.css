@@ -102,6 +102,36 @@
   color: var(--color-text-secondary);
 }
 
+/* Загрузка */
+
+.loader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: center;
+  /* Совпадает с высотой недели и истории, чтобы панель не прыгала после загрузки */
+  min-height: clamp(495px, calc(100svh - 225px), 835px);
+  padding: var(--space-6);
+  font-size: var(--font-field-size);
+  color: var(--color-text-secondary);
+}
+
+.loader__ring {
+  width: var(--space-6);
+  height: var(--space-6);
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text-secondary);
+  border-radius: 50%;
+  animation: loader-spin 800ms linear infinite;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Вид недели */
 
 .week-view {
@@ -1253,5 +1283,10 @@
   .schedule-form select,
   .schedule-form textarea {
     transition: none;
+  }
+
+  /* Спиннер функциональный — не убираем совсем, но замедляем */
+  .loader__ring {
+    animation-duration: 1600ms;
   }
 }
