@@ -403,7 +403,9 @@
   border-top: 2px solid var(--color-accent);
   pointer-events: none;
   /* Переход длится ровно один тик: линия доползает до новой минуты без рывка. */
-  transition: transform var(--duration-minute) linear;
+  transition:
+    transform var(--duration-minute) linear,
+    opacity var(--duration-hover) var(--ease-standard);
 }
 
 .week-now__dot {
@@ -430,6 +432,12 @@
   background: var(--color-surface);
   border-radius: var(--radius-control-sm);
   transform: translateY(-50%);
+}
+
+/* Вся линия с меткой лежит поверх событий: при наведении на событие она
+   почти растворяется, чтобы не закрывать его текст, но остаётся едва заметной. */
+.week-event:hover ~ .week-now {
+  opacity: var(--opacity-ghost);
 }
 
 /* Вид месяца */
