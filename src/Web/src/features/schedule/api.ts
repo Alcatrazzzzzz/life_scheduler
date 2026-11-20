@@ -189,6 +189,18 @@ export function attachmentDownloadUrl(scheduleId: string, attachmentId: string):
   return `/api/schedules/${scheduleId}/attachments/${attachmentId}/download`
 }
 
+export async function fetchAttachmentBlob(
+  scheduleId: string,
+  attachmentId: string,
+): Promise<Blob> {
+  // Редирект на хранилище следует автоматически; blob нужен, чтобы показать
+  // содержимое в предпросмотре несмотря на Content-Disposition: attachment.
+  const res = await fetch(attachmentDownloadUrl(scheduleId, attachmentId))
+  if (!res.ok) throw await toApiError(res)
+
+  return res.blob()
+}
+
 export async function createSchedule(input: CreateScheduleInput): Promise<ScheduleEntry> {
   const res = await fetch('/api/schedules', {
     method: 'POST',

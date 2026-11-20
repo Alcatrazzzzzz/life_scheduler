@@ -9,6 +9,7 @@ import {
   createSchedule,
   deleteAttachment,
   deleteSchedule,
+  fetchAttachmentBlob,
   getSchedule,
   listHistory,
   listSchedules,
@@ -20,6 +21,8 @@ export const scheduleKeys = {
   all: ['schedule'] as const,
   list: (from?: string, to?: string) => [...scheduleKeys.all, 'list', { from, to }] as const,
   detail: (id: string) => [...scheduleKeys.all, 'detail', id] as const,
+  attachment: (scheduleId: string, attachmentId: string) =>
+    [...scheduleKeys.all, 'attachment', scheduleId, attachmentId] as const,
   history: ['schedule', 'history'] as const,
 }
 
@@ -81,6 +84,20 @@ export function useSchedule(id: string, enabled = true) {
     queryKey: scheduleKeys.detail(id),
     queryFn: () => getSchedule(id),
     enabled,
+  })
+}
+
+export function useAttachmentBlob(
+  scheduleId: string,
+  attachmentId: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: scheduleKeys.attachment(scheduleId, attachmentId),
+    queryFn: () => fetchAttachmentBlob(scheduleId, attachmentId),
+    enabled,
+    // Файлы до 25 МБ: не держим их в кэше после закрытия предпросмотра.
+    gcTime: 0,
   })
 }
 

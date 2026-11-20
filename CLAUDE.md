@@ -117,4 +117,6 @@ EF Core (SQLite, `dotnet-ef` — локальный tool в `.config/dotnet-tool
 - Store session data files only in docs/sessions, never in the web folder or repo root.
 - In dark theme, footnote/hint text must be clearly readable: increase text contrast or lighten the hint's background.
 - Add hover animation to large buttons: scale the button border slightly, not the text, and add a subtle semi-transparent border on hover.
+- Keep vertical slices independent: no slice references another; new features follow this slice structure.
+- When writing an ADR, read only the last three ADR files for context, not more.
 <!-- end claude-reflect -->

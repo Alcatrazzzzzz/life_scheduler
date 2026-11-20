@@ -915,6 +915,15 @@
   white-space: nowrap;
 }
 
+.attachment-row__name--action {
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
 .attachment-row__name:hover {
   color: var(--color-text-secondary);
   text-decoration: underline;
@@ -927,8 +936,9 @@
   color: var(--color-text-muted);
 }
 
-.attachment-row__remove {
+.attachment-row__action {
   flex: none;
+  padding: 0 var(--space-2);
 }
 
 .attachment-upload {
@@ -958,6 +968,170 @@
 .attachment-upload--busy {
   color: var(--color-text-muted);
   pointer-events: none;
+}
+
+/* Предпросмотр вложения */
+
+.modal--preview {
+  width: min(920px, calc(100vw - var(--space-8)));
+}
+
+.attachment-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.attachment-preview__tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  overflow-x: auto;
+  border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.attachment-preview__tab {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-2);
+  align-items: center;
+  max-width: 220px;
+  min-height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-meta-size);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  background: transparent;
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    border-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.attachment-preview__tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-input);
+  border-color: var(--color-border);
+}
+
+.attachment-preview__tab.is-active {
+  color: var(--color-text);
+  background: var(--color-surface-selected);
+  border-color: var(--color-border);
+}
+
+.attachment-preview__tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-preview__bar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.attachment-preview__actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+  align-items: center;
+  margin-left: auto;
+}
+
+.attachment-preview__actions .btn {
+  flex: none;
+  min-height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  font-size: var(--font-meta-size);
+}
+
+.attachment-preview__meta {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-meta-size);
+  color: var(--color-text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-preview__status {
+  margin: 0;
+  font-size: var(--font-meta-size);
+  color: var(--color-text-tertiary);
+}
+
+.attachment-preview__image-wrap {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3);
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+.attachment-preview__image {
+  display: block;
+  max-width: 100%;
+  max-height: min(70svh, 640px);
+  object-fit: contain;
+}
+
+.attachment-preview__frame {
+  width: 100%;
+  height: min(70svh, 640px);
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+.attachment-preview__docx {
+  max-height: min(70svh, 640px);
+  padding: var(--space-3);
+  overflow: auto;
+  background: var(--color-surface-sunken);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+/* docx-preview рисует страницы листами: убираем его фон и тень, оставляем лист */
+.attachment-preview__docx .docx-wrapper {
+  padding: 0;
+  background: transparent;
+}
+
+.attachment-preview__docx .docx-wrapper > section.docx {
+  margin: 0 auto var(--space-3);
+  background: #fcfbf7;
+  border: var(--border-width) solid var(--color-border);
+  box-shadow: none;
+}
+
+.attachment-preview__docx .docx-wrapper > section.docx:last-child {
+  margin-bottom: 0;
+}
+
+.attachment-preview__fallback {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  color: var(--color-text-tertiary);
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+.attachment-preview__fallback-text {
+  max-width: 42ch;
+  font-size: var(--font-meta-size);
+  line-height: 1.5;
 }
 
 /* История */
@@ -1073,6 +1247,7 @@
   .week-now,
   .history-row,
   .attachment-upload,
+  .attachment-preview__tab,
   .modal__close,
   .schedule-form input,
   .schedule-form select,

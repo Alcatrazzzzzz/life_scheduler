@@ -4,10 +4,11 @@ import { X } from 'lucide-react'
 interface ModalProps {
   title: string
   onClose: () => void
+  className?: string
   children: ReactNode
 }
 
-export function Modal({ title, onClose, children }: ModalProps) {
+export function Modal({ title, onClose, className, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -23,7 +24,12 @@ export function Modal({ title, onClose, children }: ModalProps) {
   }
 
   return (
-    <dialog ref={dialogRef} className="modal" onClose={onClose} onClick={handleClick}>
+    <dialog
+      ref={dialogRef}
+      className={className ? `modal ${className}` : 'modal'}
+      onClose={onClose}
+      onClick={handleClick}
+    >
       <div className="modal__header">
         <h2 className="modal__title">{title}</h2>
         <button type="button" className="modal__close" onClick={onClose} aria-label="Закрыть">
