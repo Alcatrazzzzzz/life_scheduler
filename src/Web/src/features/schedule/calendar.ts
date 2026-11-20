@@ -105,6 +105,32 @@ export function monthGridRange(anchor: Date): DateRange {
   return { from: toDateString(days[0]), to: toDateString(days[days.length - 1]) }
 }
 
+/** Границы календарного месяца — батч для фоновой загрузки. */
+export function monthRange(anchor: Date): DateRange {
+  return {
+    from: toDateString(new Date(anchor.getFullYear(), anchor.getMonth(), 1)),
+    to: toDateString(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)),
+  }
+}
+
+/** Календарные месяцы, в которые попадает диапазон дат (граничные месяцы включительно). */
+export function monthsCovering(from: string, to: string): Date[] {
+  const start = parseDateString(from)
+  const end = parseDateString(to)
+  const last = new Date(end.getFullYear(), end.getMonth(), 1)
+  const months: Date[] = []
+
+  for (
+    let month = new Date(start.getFullYear(), start.getMonth(), 1);
+    month <= last;
+    month = new Date(month.getFullYear(), month.getMonth() + 1, 1)
+  ) {
+    months.push(month)
+  }
+
+  return months
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&

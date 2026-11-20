@@ -18,7 +18,7 @@ import {
   weekDays,
   weekRange,
 } from '../calendar'
-import { useSchedules } from '../queries'
+import { useSchedulePrefetch, useScheduleWindow } from '../queries'
 import { useNow } from '../useNow'
 import { CreateScheduleDialog, type CreateDraft } from './CreateScheduleDialog'
 import { HistoryView } from './HistoryView'
@@ -39,11 +39,11 @@ export function ScheduleCalendar() {
   const now = useNow()
 
   const range = view === 'week' ? weekRange(anchor) : monthGridRange(anchor)
-  const schedules = useSchedules(range.from, range.to, view !== 'history')
-  const entries = schedules.data ?? []
-  // keepPreviousData держит старые данные при смене периода — лоадер нужен только
-  // на первой загрузке, когда показывать ещё нечего.
-  const isLoading = schedules.isPending && view !== 'history'
+  const schedules = useScheduleWindow(range.from, range.to, view !== 'history')
+  const entries = schedules.entries
+  // Видимое окно собирается из уже загруженных месячных батчей, а лоадер нужен
+  // только на первом кадре, когда показывать ещё нечего.
+  useSchedulePrefetch(view !== 'history' && !schedules.isLoading && schedules.error === null)
 
   function shiftPeriod(direction: -1 | 1) {
     setAnchor((current) =>
@@ -139,11 +139,11 @@ export function ScheduleCalendar() {
         </div>
       </div>
 
-      {schedules.isError && <p className="schedule-error">{schedules.error.message}</p>}
+      {schedules.error && <p className="schedule-error">{schedules.error.message}</p>}
 
       <div className="calendar-panel">
         <div className="calendar-panel__scroll">
-          {isLoading ? (
+          {schedules.isLoading ? (
             <Loader />
           ) : view === 'history' ? (
             <HistoryView onEntryClick={setSelectedEntry} />

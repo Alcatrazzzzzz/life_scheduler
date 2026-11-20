@@ -1,6 +1,7 @@
+import { useEffect } from 'react'
 import {
-  keepPreviousData,
   useMutation,
+  useQueries,
   useQuery,
   useQueryClient,
   type QueryClient,
@@ -16,6 +17,11 @@ import {
   uploadAttachment,
 } from './api'
 import type { ScheduleEntry } from './api'
+import { monthRange, monthsCovering, startOfToday } from './calendar'
+
+const PREFETCH_MONTHS_AHEAD = 12
+const PREFETCH_MONTHS_BEHIND = 3
+const CHUNK_STALE_MS = 5 * 60_000
 
 export const scheduleKeys = {
   all: ['schedule'] as const,
@@ -70,13 +76,105 @@ function addToListCaches(queryClient: QueryClient, entry: ScheduleEntry) {
   }
 }
 
-export function useSchedules(from?: string, to?: string, enabled = true) {
-  return useQuery({
-    queryKey: scheduleKeys.list(from, to),
-    queryFn: () => listSchedules(from, to),
-    placeholderData: keepPreviousData,
-    enabled,
+function scheduleChunkOptions(month: Date) {
+  const range = monthRange(month)
+
+  return {
+    queryKey: scheduleKeys.list(range.from, range.to),
+    queryFn: () => listSchedules(range.from, range.to),
+    staleTime: CHUNK_STALE_MS,
+  }
+}
+
+/**
+ * Сливает месячные батчи в один список. Соседние месяцы не пересекаются, но
+ * дедупликация по id+date страхует от дублей повторяющихся вхождений.
+ */
+export function mergeWindowEntries(
+  chunks: readonly ScheduleEntry[][],
+  from: string,
+  to: string,
+): ScheduleEntry[] {
+  const seen = new Set<string>()
+  const merged: ScheduleEntry[] = []
+
+  for (const entries of chunks) {
+    for (const entry of entries) {
+      if (entry.date < from || entry.date > to) continue
+
+      // Повторяющаяся запись приходит по одному вхождению на дату — ключ id+date.
+      const key = `${entry.id}-${entry.date}`
+      if (seen.has(key)) continue
+
+      seen.add(key)
+      merged.push(entry)
+    }
+  }
+
+  return sortLikeEndpoint(merged)
+}
+
+/**
+ * Данные для видимого периода собираются из месячных батчей, которые уже
+ * лежат в кэше. Недостающие батчи запрашиваются сразу при навигации.
+ */
+export function useScheduleWindow(from: string, to: string, enabled = true) {
+  const results = useQueries({
+    queries: monthsCovering(from, to).map((month) => ({
+      ...scheduleChunkOptions(month),
+      enabled,
+    })),
   })
+
+  const entries = mergeWindowEntries(
+    results.map((result) => result.data ?? []),
+    from,
+    to,
+  )
+  const error = results.find((result) => result.error)?.error ?? null
+
+  return {
+    entries,
+    error,
+    // Лоадер нужен только пока рисовать нечего; частично собранное окно показываем как есть.
+    isLoading: enabled && entries.length === 0 && results.every((result) => result.isPending),
+  }
+}
+
+let prefetchStarted = false
+
+function monthsToPrefetch(today: Date): Date[] {
+  // Ближние месяцы нужны первыми — и вперёд, и назад.
+  const offsets: number[] = []
+  for (let distance = 1; distance <= PREFETCH_MONTHS_AHEAD; distance += 1) {
+    offsets.push(distance)
+    if (distance <= PREFETCH_MONTHS_BEHIND) offsets.push(-distance)
+  }
+
+  return offsets.map((offset) => new Date(today.getFullYear(), today.getMonth() + offset, 1))
+}
+
+/** После первой отрисовки догружает соседние месяцы последовательными батчами. */
+export function useSchedulePrefetch(enabled: boolean) {
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    if (!enabled || prefetchStarted) return
+    prefetchStarted = true
+
+    void (async () => {
+      for (const month of monthsToPrefetch(startOfToday())) {
+        try {
+          // fetchQuery, а не prefetchQuery: последний глотает ошибки и не даёт понять,
+          // что батч не загрузился, — очередь бы молча оборвалась.
+          await queryClient.fetchQuery(scheduleChunkOptions(month))
+        } catch {
+          // API недоступен — не долбим оставшиеся батчи.
+          return
+        }
+      }
+    })()
+  }, [enabled, queryClient])
 }
 
 export function useSchedule(id: string, enabled = true) {
