@@ -59,6 +59,25 @@ function Get-TargetScreen {
   return $screens | Where-Object { $_.Primary } | Select-Object -First 1
 }
 
+# Ждём, пока порт начнёт принимать соединения: так следующий шаг стартует только тогда,
+# когда предыдущий процесс уже готов отвечать.
+function Wait-ForPort([int] $Port, [int] $TimeoutSeconds) {
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    $probe = [System.Net.Sockets.TcpClient]::new()
+    try {
+      $probe.Connect('localhost', $Port)
+      return $true
+    } catch {
+      Start-Sleep -Milliseconds 250
+    } finally {
+      $probe.Dispose()
+    }
+  }
+
+  return $false
+}
+
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -129,52 +148,47 @@ $api = Start-Process $dotnet `
   -ArgumentList 'watch', '--project', "$root\src\LifeScheduler.Api", 'run', '--launch-profile', 'http' `
   -NoNewWindow -PassThru
 
-$web = Start-Process 'npm.cmd' -ArgumentList 'run', 'dev' `
-  -WorkingDirectory "$root\src\Web" `
-  -NoNewWindow -PassThru
-
-# Открываем страницу, только когда Vite начнёт принимать соединения, — иначе браузер
-# покажет ошибку «сайт недоступен» и её придётся обновлять вручную.
-$deadline = (Get-Date).AddSeconds(30)
-$ready = $false
-while (-not $ready -and (Get-Date) -lt $deadline) {
-  $probe = [System.Net.Sockets.TcpClient]::new()
-  try {
-    $probe.Connect('localhost', 5173)
-    $ready = $true
-  } catch {
-    Start-Sleep -Milliseconds 250
-  } finally {
-    $probe.Dispose()
-  }
-}
-
+$web = $null
 $browser = $null
 $browserProfile = Join-Path $env:TEMP 'life-scheduler-dev-browser'
 
-if ($ready) {
-  $browserPath = Find-Browser
-  if ($browserPath) {
-    $screen = Get-TargetScreen
-    $position = '{0},{1}' -f ($screen.WorkingArea.Left + 40), ($screen.WorkingArea.Top + 40)
-
-    $browser = Start-Process $browserPath `
-      -ArgumentList '--app=http://localhost:5173', ('--user-data-dir="{0}"' -f $browserProfile), '--no-first-run', '--no-default-browser-check', "--window-position=$position" `
-      -PassThru
-
-    Expand-BrowserWindow (Get-ProcessTree @($browser.Id))
-  } else {
-    # Браузер по умолчанию не даёт handle для закрытия - окно останется открытым.
-    Start-Process 'http://localhost:5173'
-  }
-} else {
-  Write-Host 'Vite did not answer in 30s - open http://localhost:5173 manually.' -ForegroundColor Yellow
-}
-
 try {
+  # Фронтенд стартует только после того, как API начнёт принимать соединения: иначе Vite
+  # отдаёт страницу раньше бэкенда, первые запросы к /api падают, и ошибка висит до перезагрузки.
+  if (-not (Wait-ForPort 5148 120)) {
+    Write-Host 'API did not answer in 120s - frontend not started.' -ForegroundColor Yellow
+    return
+  }
+
+  $web = Start-Process 'npm.cmd' -ArgumentList 'run', 'dev' `
+    -WorkingDirectory "$root\src\Web" `
+    -NoNewWindow -PassThru
+
+  # Открываем страницу, только когда Vite начнёт принимать соединения, — иначе браузер
+  # покажет ошибку «сайт недоступен» и её придётся обновлять вручную.
+  if (Wait-ForPort 5173 30) {
+    $browserPath = Find-Browser
+    if ($browserPath) {
+      $screen = Get-TargetScreen
+      $position = '{0},{1}' -f ($screen.WorkingArea.Left + 40), ($screen.WorkingArea.Top + 40)
+
+      $browser = Start-Process $browserPath `
+        -ArgumentList '--app=http://localhost:5173', ('--user-data-dir="{0}"' -f $browserProfile), '--no-first-run', '--no-default-browser-check', "--window-position=$position" `
+        -PassThru
+
+      Expand-BrowserWindow (Get-ProcessTree @($browser.Id))
+    } else {
+      # Браузер по умолчанию не даёт handle для закрытия - окно останется открытым.
+      Start-Process 'http://localhost:5173'
+    }
+  } else {
+    Write-Host 'Vite did not answer in 30s - open http://localhost:5173 manually.' -ForegroundColor Yellow
+  }
+
   Wait-Process -Id $api.Id, $web.Id -ErrorAction SilentlyContinue
 } finally {
-  $rootIds = @($api.Id, $web.Id)
+  $rootIds = @($api.Id)
+  if ($web) { $rootIds += $web.Id }
   if ($browser) { $rootIds += $browser.Id }
 
   foreach ($procId in Get-ProcessTree $rootIds) {
