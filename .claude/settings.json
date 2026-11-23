@@ -34,7 +34,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "dotnet build --no-restore -v quiet",
+            "command": "cd \"$CLAUDE_PROJECT_DIR/life_scheduler\" && dotnet build --no-restore -v quiet",
             "timeout": 120
           }
         ]
@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR/src/Web\" && npm run typecheck --silent",
+            "command": "cd \"$CLAUDE_PROJECT_DIR/life_scheduler/src/Web\" && npm run typecheck --silent",
             "timeout": 60
           }
         ]

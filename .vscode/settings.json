@@ -4,7 +4,7 @@
     "source.fixAll.eslint": "explicit"
   },
 
-  "eslint.workingDirectories": ["src/Web"],
+  "eslint.workingDirectories": ["life_scheduler/src/Web"],
 
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp"
