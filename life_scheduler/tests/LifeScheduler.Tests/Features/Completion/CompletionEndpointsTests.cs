@@ -4,6 +4,7 @@ using LifeScheduler.Api.Features.Completion;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Schedule;
 using LifeScheduler.Tests.Support;
 
 namespace LifeScheduler.Tests.Features.Completion;
@@ -14,7 +15,7 @@ public sealed class CompletionEndpointsTests
     private static readonly DateOnly Today = new(2026, 11, 20);
 
     [Fact]
-    public async Task CompleteTask_HidesItFromCalendarAndAddsToHistory()
+    public async Task CompleteTask_StaysInCalendarAsCompletedAndAddsToHistory()
     {
         using var factory = new ScheduleApiFactory(Now);
         factory.InitializeDatabase();
@@ -30,7 +31,9 @@ public sealed class CompletionEndpointsTests
             $"/api/schedules?from={Today:yyyy-MM-dd}&to={Today:yyyy-MM-dd}",
             ScheduleTestHelpers.JsonOptions);
         Assert.NotNull(list);
-        Assert.DoesNotContain(list, item => item.Id == id);
+        var calendarItem = Assert.Single(list);
+        Assert.Equal(id, calendarItem.Id);
+        Assert.Equal(ScheduleResult.Completed, calendarItem.Result);
 
         var history = await client.GetFromJsonAsync<List<ListHistory.Response>>(
             "/api/schedules/history", ScheduleTestHelpers.JsonOptions);
@@ -38,7 +41,7 @@ public sealed class CompletionEndpointsTests
         var item = Assert.Single(history);
         Assert.Equal(id, item.Id);
         Assert.Equal(ScheduleKind.Task, item.Kind);
-        Assert.Equal(HistoryResult.Completed, item.Result);
+        Assert.Equal(ScheduleResult.Completed, item.Result);
     }
 
     [Fact]
@@ -91,8 +94,11 @@ public sealed class CompletionEndpointsTests
 
         Assert.NotNull(list);
         Assert.Equal(
-            [new DateOnly(2026, 11, 18), new DateOnly(2026, 11, 20)],
+            [new DateOnly(2026, 11, 18), new DateOnly(2026, 11, 19), new DateOnly(2026, 11, 20)],
             list.Select(item => item.Date));
+        Assert.Equal(
+            [ScheduleResult.None, ScheduleResult.Completed, ScheduleResult.None],
+            list.Select(item => item.Result));
 
         var history = await client.GetFromJsonAsync<List<ListHistory.Response>>(
             "/api/schedules/history", ScheduleTestHelpers.JsonOptions);
@@ -102,7 +108,7 @@ public sealed class CompletionEndpointsTests
         Assert.Equal(id, mark.Id);
         Assert.Equal(new DateOnly(2026, 11, 19), mark.Date);
         Assert.Equal(ScheduleKind.Habit, mark.Kind);
-        Assert.Equal(HistoryResult.Completed, mark.Result);
+        Assert.Equal(ScheduleResult.Completed, mark.Result);
     }
 
     [Fact]

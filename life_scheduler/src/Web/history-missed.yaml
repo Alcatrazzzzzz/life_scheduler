@@ -1,0 +1,61 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Планировщик" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - button "Включить тёмную тему" [ref=e9] [cursor=pointer]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - heading "История" [level=1] [ref=e801]
+        - generic [ref=e31]:
+          - group "Вид календаря" [ref=e32]:
+            - button "Неделя" [ref=e33] [cursor=pointer]
+            - button "Месяц" [ref=e34] [cursor=pointer]
+            - button "История" [pressed] [ref=e35] [cursor=pointer]
+          - button "Новая запись" [ref=e36] [cursor=pointer]
+      - generic [ref=e802]:
+        - search [ref=e803]:
+          - generic [ref=e804]:
+            - generic [ref=e805]: Поиск
+            - searchbox "Поиск" [ref=e806]
+          - generic [ref=e807]:
+            - generic [ref=e808]: С даты
+            - textbox "С даты" [ref=e809]
+          - generic [ref=e810]:
+            - generic [ref=e811]: По дату
+            - textbox "По дату" [ref=e812]
+          - generic [ref=e813]:
+            - generic [ref=e814]: Тип
+            - combobox "Тип" [ref=e815]:
+              - option "Все типы" [selected]
+              - option "Событие"
+              - option "Задача"
+              - option "Привычка"
+          - generic [ref=e816]:
+            - generic [ref=e817]: Итог
+            - combobox "Итог" [ref=e818]:
+              - option "Любой"
+              - option "Выполнено"
+              - option "Пропущено" [selected]
+          - generic [ref=e819] [cursor=pointer]:
+            - checkbox "С файлами" [ref=e820]
+            - generic [ref=e821]: С файлами
+          - button "Сбросить" [ref=e1027] [cursor=pointer]
+        - generic [ref=e822]:
+          - generic [ref=e823]:
+            - heading "воскресенье, 22 ноября 2026" [level=2] [ref=e824]
+            - list [ref=e825]:
+              - listitem [ref=e936]:
+                - 'button "Без времени Проверка: пропущено Не выполнена" [ref=e937] [cursor=pointer]':
+                  - generic [ref=e938]: Без времени
+                  - generic [ref=e939]: "Проверка: пропущено"
+                  - generic [ref=e940]: Не выполнена
+          - generic [ref=e944]:
+            - heading "суббота, 21 ноября 2026" [level=2] [ref=e945]
+            - list [ref=e946]:
+              - listitem [ref=e947]:
+                - button "12:00–13:00 123123 Не выполнена 1" [ref=e948] [cursor=pointer]:
+                  - generic [ref=e949]: 12:00–13:00
+                  - generic [ref=e950]: "123123"
+                  - generic [ref=e951]: Не выполнена
+                  - generic [ref=e955]: "1"

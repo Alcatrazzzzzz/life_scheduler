@@ -1,0 +1,330 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Планировщик" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - button "Включить тёмную тему" [ref=e9] [cursor=pointer]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - button "Предыдущий период" [ref=e23] [cursor=pointer]
+          - button "Сегодня" [ref=e26] [cursor=pointer]
+          - button "Следующий период" [ref=e27] [cursor=pointer]
+        - heading "Ноябрь 2026" [level=1] [ref=e402]
+        - generic [ref=e31]:
+          - group "Вид календаря" [ref=e32]:
+            - button "Неделя" [ref=e33] [cursor=pointer]
+            - button "Месяц" [active] [pressed] [ref=e34] [cursor=pointer]
+            - button "История" [ref=e35] [cursor=pointer]
+          - button "Новая запись" [ref=e36] [cursor=pointer]
+      - generic [ref=e403]:
+        - generic [ref=e404]:
+          - generic [ref=e405]: пн
+          - generic [ref=e406]: вт
+          - generic [ref=e407]: ср
+          - generic [ref=e408]: чт
+          - generic [ref=e409]: пт
+          - generic [ref=e410]: сб
+          - generic [ref=e411]: вс
+        - generic [ref=e412]:
+          - generic [ref=e413]:
+            - button "Новая запись 2026-10-26" [ref=e414] [cursor=pointer]
+            - generic: "26"
+          - generic [ref=e415]:
+            - button "Новая запись 2026-10-27" [ref=e416] [cursor=pointer]
+            - generic: "27"
+          - generic [ref=e417]:
+            - button "Новая запись 2026-10-28" [ref=e418] [cursor=pointer]
+            - generic: "28"
+          - generic [ref=e419]:
+            - button "Новая запись 2026-10-29" [ref=e420] [cursor=pointer]
+            - generic: "29"
+          - generic [ref=e421]:
+            - button "Новая запись 2026-10-30" [ref=e422] [cursor=pointer]
+            - generic: "30"
+          - generic [ref=e423]:
+            - button "Новая запись 2026-10-31" [ref=e424] [cursor=pointer]
+            - generic: "31"
+          - generic [ref=e425]:
+            - button "Новая запись 2026-11-01" [ref=e426] [cursor=pointer]
+            - generic: "1"
+          - generic [ref=e427]:
+            - button "Новая запись 2026-11-02" [ref=e428] [cursor=pointer]
+            - generic: "2"
+          - generic [ref=e429]:
+            - button "Новая запись 2026-11-03" [ref=e430] [cursor=pointer]
+            - generic: "3"
+          - generic [ref=e431]:
+            - button "Новая запись 2026-11-04" [ref=e432] [cursor=pointer]
+            - generic: "4"
+          - generic [ref=e433]:
+            - button "Новая запись 2026-11-05" [ref=e434] [cursor=pointer]
+            - generic: "5"
+          - generic [ref=e435]:
+            - button "Новая запись 2026-11-06" [ref=e436] [cursor=pointer]
+            - generic: "6"
+          - generic [ref=e437]:
+            - button "Новая запись 2026-11-07" [ref=e438] [cursor=pointer]
+            - generic: "7"
+          - generic [ref=e439]:
+            - button "Новая запись 2026-11-08" [ref=e440] [cursor=pointer]
+            - generic: "8"
+          - generic [ref=e441]:
+            - button "Новая запись 2026-11-09" [ref=e442] [cursor=pointer]
+            - generic: "9"
+          - generic [ref=e443]:
+            - button "Новая запись 2026-11-10" [ref=e444] [cursor=pointer]
+            - generic: "10"
+          - generic [ref=e445]:
+            - button "Новая запись 2026-11-11" [ref=e446] [cursor=pointer]
+            - generic: "11"
+          - generic [ref=e447]:
+            - button "Новая запись 2026-11-12" [ref=e448] [cursor=pointer]
+            - generic: "12"
+            - button "123 Прошло" [ref=e449] [cursor=pointer]:
+              - generic [ref=e450]: "123"
+              - img "Прошло" [ref=e451]
+          - generic [ref=e453]:
+            - button "Новая запись 2026-11-13" [ref=e454] [cursor=pointer]
+            - generic: "13"
+          - generic [ref=e455]:
+            - button "Новая запись 2026-11-14" [ref=e456] [cursor=pointer]
+            - generic: "14"
+          - generic [ref=e457]:
+            - button "Новая запись 2026-11-15" [ref=e458] [cursor=pointer]
+            - generic: "15"
+          - generic [ref=e459]:
+            - button "Новая запись 2026-11-16" [ref=e460] [cursor=pointer]
+            - generic: "16"
+          - generic [ref=e461]:
+            - button "Новая запись 2026-11-17" [ref=e462] [cursor=pointer]
+            - generic: "17"
+          - generic [ref=e463]:
+            - button "Новая запись 2026-11-18" [ref=e464] [cursor=pointer]
+            - generic: "18"
+            - generic:
+              - button "10:00 123 Повторяется" [ref=e465] [cursor=pointer]:
+                - generic [ref=e466]: 10:00
+                - generic [ref=e467]: "123"
+                - img "Повторяется" [ref=e468]
+              - button "20:00 123 Прошло" [ref=e473] [cursor=pointer]:
+                - generic [ref=e474]: 20:00
+                - generic [ref=e475]: "123"
+                - img "Прошло" [ref=e476]
+          - generic [ref=e478]:
+            - button "Новая запись 2026-11-19" [ref=e479] [cursor=pointer]
+            - generic: "19"
+            - generic:
+              - button "10:00 123 Повторяется" [ref=e480] [cursor=pointer]:
+                - generic [ref=e481]: 10:00
+                - generic [ref=e482]: "123"
+                - img "Повторяется" [ref=e483]
+              - button "21:30 test Прошло" [ref=e488] [cursor=pointer]:
+                - generic [ref=e489]: 21:30
+                - generic [ref=e490]: test
+                - img "Прошло" [ref=e491]
+              - button "21:30 TEST FILE Прошло" [ref=e493] [cursor=pointer]:
+                - generic [ref=e494]: 21:30
+                - generic [ref=e495]: TEST FILE
+                - img "Прошло" [ref=e496]
+              - generic: ещё 1
+          - generic [ref=e498]:
+            - button "Новая запись 2026-11-20" [ref=e499] [cursor=pointer]
+            - generic: "20"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e500] [cursor=pointer]':
+                - generic [ref=e501]: "Проверка: привычка"
+                - img "Повторяется" [ref=e502]
+              - button "10:00 123 Повторяется" [ref=e507] [cursor=pointer]:
+                - generic [ref=e508]: 10:00
+                - generic [ref=e509]: "123"
+                - img "Повторяется" [ref=e510]
+              - button "17:00 123123 Выполнено" [ref=e515] [cursor=pointer]:
+                - generic [ref=e516]: 17:00
+                - generic [ref=e517]: "123123"
+                - img "Выполнено" [ref=e518]
+              - generic: ещё 2
+          - generic [ref=e520]:
+            - button "Новая запись 2026-11-21" [ref=e521] [cursor=pointer]
+            - generic: "21"
+            - generic:
+              - 'button "Проверка: привычка Выполнено Повторяется" [ref=e522] [cursor=pointer]':
+                - generic [ref=e523]: "Проверка: привычка"
+                - img "Выполнено" [ref=e524]
+                - img "Повторяется" [ref=e526]
+              - button "10:00 123 Повторяется" [ref=e531] [cursor=pointer]:
+                - generic [ref=e532]: 10:00
+                - generic [ref=e533]: "123"
+                - img "Повторяется" [ref=e534]
+              - button "12:00 123123 Пропущено" [ref=e539] [cursor=pointer]:
+                - generic [ref=e540]: 12:00
+                - generic [ref=e541]: "123123"
+                - img "Пропущено" [ref=e542]
+          - generic [ref=e545]:
+            - button "Новая запись 2026-11-22" [ref=e546] [cursor=pointer]
+            - generic: "22"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e547] [cursor=pointer]':
+                - generic [ref=e548]: "Проверка: привычка"
+                - img "Повторяется" [ref=e549]
+              - 'button "Проверка: выполнено Выполнено" [ref=e554] [cursor=pointer]':
+                - generic [ref=e555]: "Проверка: выполнено"
+                - img "Выполнено" [ref=e556]
+              - 'button "Проверка: пропущено Пропущено" [ref=e558] [cursor=pointer]':
+                - generic [ref=e559]: "Проверка: пропущено"
+                - img "Пропущено" [ref=e560]
+              - generic: ещё 2
+          - generic [ref=e563]:
+            - button "Новая запись 2026-11-23" [ref=e564] [cursor=pointer]
+            - generic: "23"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e565] [cursor=pointer]':
+                - generic [ref=e566]: "Проверка: привычка"
+                - img "Повторяется" [ref=e567]
+              - button "10:00 123 Повторяется" [ref=e572] [cursor=pointer]:
+                - generic [ref=e573]: 10:00
+                - generic [ref=e574]: "123"
+                - img "Повторяется" [ref=e575]
+          - generic [ref=e580]:
+            - button "Новая запись 2026-11-24" [ref=e581] [cursor=pointer]
+            - generic: "24"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e582] [cursor=pointer]':
+                - generic [ref=e583]: "Проверка: привычка"
+                - img "Повторяется" [ref=e584]
+              - button "10:00 123 Повторяется" [ref=e589] [cursor=pointer]:
+                - generic [ref=e590]: 10:00
+                - generic [ref=e591]: "123"
+                - img "Повторяется" [ref=e592]
+          - generic [ref=e597]:
+            - button "Новая запись 2026-11-25" [ref=e598] [cursor=pointer]
+            - generic: "25"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e599] [cursor=pointer]':
+                - generic [ref=e600]: "Проверка: привычка"
+                - img "Повторяется" [ref=e601]
+              - button "10:00 123 Повторяется" [ref=e606] [cursor=pointer]:
+                - generic [ref=e607]: 10:00
+                - generic [ref=e608]: "123"
+                - img "Повторяется" [ref=e609]
+          - generic [ref=e614]:
+            - button "Новая запись 2026-11-26" [ref=e615] [cursor=pointer]
+            - generic: "26"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e616] [cursor=pointer]':
+                - generic [ref=e617]: "Проверка: привычка"
+                - img "Повторяется" [ref=e618]
+              - button "10:00 123 Повторяется" [ref=e623] [cursor=pointer]:
+                - generic [ref=e624]: 10:00
+                - generic [ref=e625]: "123"
+                - img "Повторяется" [ref=e626]
+          - generic [ref=e631]:
+            - button "Новая запись 2026-11-27" [ref=e632] [cursor=pointer]
+            - generic: "27"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e633] [cursor=pointer]':
+                - generic [ref=e634]: "Проверка: привычка"
+                - img "Повторяется" [ref=e635]
+              - button "10:00 123 Повторяется" [ref=e640] [cursor=pointer]:
+                - generic [ref=e641]: 10:00
+                - generic [ref=e642]: "123"
+                - img "Повторяется" [ref=e643]
+          - generic [ref=e648]:
+            - button "Новая запись 2026-11-28" [ref=e649] [cursor=pointer]
+            - generic: "28"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e650] [cursor=pointer]':
+                - generic [ref=e651]: "Проверка: привычка"
+                - img "Повторяется" [ref=e652]
+              - button "10:00 123 Повторяется" [ref=e657] [cursor=pointer]:
+                - generic [ref=e658]: 10:00
+                - generic [ref=e659]: "123"
+                - img "Повторяется" [ref=e660]
+          - generic [ref=e665]:
+            - button "Новая запись 2026-11-29" [ref=e666] [cursor=pointer]
+            - generic: "29"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e667] [cursor=pointer]':
+                - generic [ref=e668]: "Проверка: привычка"
+                - img "Повторяется" [ref=e669]
+              - button "10:00 123 Повторяется" [ref=e674] [cursor=pointer]:
+                - generic [ref=e675]: 10:00
+                - generic [ref=e676]: "123"
+                - img "Повторяется" [ref=e677]
+          - generic [ref=e682]:
+            - button "Новая запись 2026-11-30" [ref=e683] [cursor=pointer]
+            - generic: "30"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e684] [cursor=pointer]':
+                - generic [ref=e685]: "Проверка: привычка"
+                - img "Повторяется" [ref=e686]
+              - button "10:00 123 Повторяется" [ref=e691] [cursor=pointer]:
+                - generic [ref=e692]: 10:00
+                - generic [ref=e693]: "123"
+                - img "Повторяется" [ref=e694]
+          - generic [ref=e699]:
+            - button "Новая запись 2026-12-01" [ref=e700] [cursor=pointer]
+            - generic: "1"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e701] [cursor=pointer]':
+                - generic [ref=e702]: "Проверка: привычка"
+                - img "Повторяется" [ref=e703]
+              - button "10:00 123 Повторяется" [ref=e708] [cursor=pointer]:
+                - generic [ref=e709]: 10:00
+                - generic [ref=e710]: "123"
+                - img "Повторяется" [ref=e711]
+          - generic [ref=e716]:
+            - button "Новая запись 2026-12-02" [ref=e717] [cursor=pointer]
+            - generic: "2"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e718] [cursor=pointer]':
+                - generic [ref=e719]: "Проверка: привычка"
+                - img "Повторяется" [ref=e720]
+              - button "10:00 123 Повторяется" [ref=e725] [cursor=pointer]:
+                - generic [ref=e726]: 10:00
+                - generic [ref=e727]: "123"
+                - img "Повторяется" [ref=e728]
+          - generic [ref=e733]:
+            - button "Новая запись 2026-12-03" [ref=e734] [cursor=pointer]
+            - generic: "3"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e735] [cursor=pointer]':
+                - generic [ref=e736]: "Проверка: привычка"
+                - img "Повторяется" [ref=e737]
+              - button "10:00 123 Повторяется" [ref=e742] [cursor=pointer]:
+                - generic [ref=e743]: 10:00
+                - generic [ref=e744]: "123"
+                - img "Повторяется" [ref=e745]
+          - generic [ref=e750]:
+            - button "Новая запись 2026-12-04" [ref=e751] [cursor=pointer]
+            - generic: "4"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e752] [cursor=pointer]':
+                - generic [ref=e753]: "Проверка: привычка"
+                - img "Повторяется" [ref=e754]
+              - button "10:00 123 Повторяется" [ref=e759] [cursor=pointer]:
+                - generic [ref=e760]: 10:00
+                - generic [ref=e761]: "123"
+                - img "Повторяется" [ref=e762]
+          - generic [ref=e767]:
+            - button "Новая запись 2026-12-05" [ref=e768] [cursor=pointer]
+            - generic: "5"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e769] [cursor=pointer]':
+                - generic [ref=e770]: "Проверка: привычка"
+                - img "Повторяется" [ref=e771]
+              - button "10:00 123 Повторяется" [ref=e776] [cursor=pointer]:
+                - generic [ref=e777]: 10:00
+                - generic [ref=e778]: "123"
+                - img "Повторяется" [ref=e779]
+          - generic [ref=e784]:
+            - button "Новая запись 2026-12-06" [ref=e785] [cursor=pointer]
+            - generic: "6"
+            - generic:
+              - 'button "Проверка: привычка Повторяется" [ref=e786] [cursor=pointer]':
+                - generic [ref=e787]: "Проверка: привычка"
+                - img "Повторяется" [ref=e788]
+              - button "10:00 123 Повторяется" [ref=e793] [cursor=pointer]:
+                - generic [ref=e794]: 10:00
+                - generic [ref=e795]: "123"
+                - img "Повторяется" [ref=e796]

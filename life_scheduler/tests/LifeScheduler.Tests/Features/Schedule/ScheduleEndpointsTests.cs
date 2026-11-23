@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using LifeScheduler.Api.Features.Completion;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Schedule;
 using LifeScheduler.Tests.Support;
 using Microsoft.AspNetCore.Mvc;
 
@@ -453,6 +455,36 @@ public sealed class ScheduleEndpointsTests
         var created = await response.Content.ReadFromJsonAsync<CreateSchedule.Response>(JsonOptions);
         Assert.NotNull(created);
         Assert.Equal(ScheduleRecurrence.None, created.Recurrence);
+    }
+
+    [Fact]
+    public async Task ListSchedule_IncludesArchivedEntriesWithTheirResults()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var yesterday = new DateOnly(2026, 11, 19);
+        await ScheduleTestHelpers.CreateEntryAsync(client, "Прошедшая встреча", yesterday);
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Пропущенная задача", yesterday, kind: ScheduleKind.Task);
+
+        var completedId = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Выполненная задача", yesterday, kind: ScheduleKind.Task);
+        var completeResponse = await client.PostAsJsonAsync(
+            $"/api/schedules/{completedId}/completion",
+            new CompleteScheduleRequest(yesterday));
+        Assert.True(completeResponse.IsSuccessStatusCode);
+
+        var response = await client.GetFromJsonAsync<List<ListSchedule.Response>>(
+            $"/api/schedules?from={yesterday:yyyy-MM-dd}&to={yesterday:yyyy-MM-dd}", JsonOptions);
+
+        Assert.NotNull(response);
+        Assert.Equal(3, response.Count);
+        Assert.Equal(ScheduleResult.None, response.Single(item => item.Title == "Прошедшая встреча").Result);
+        Assert.Equal(ScheduleResult.Missed, response.Single(item => item.Title == "Пропущенная задача").Result);
+        Assert.Equal(ScheduleResult.Completed, response.Single(item => item.Title == "Выполненная задача").Result);
     }
 
     private static async Task<Guid> CreateEntryAsync(HttpClient client)

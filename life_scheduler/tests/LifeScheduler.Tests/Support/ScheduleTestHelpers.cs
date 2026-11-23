@@ -24,14 +24,15 @@ internal static class ScheduleTestHelpers
         TimeOnly? start = null,
         TimeOnly? end = null,
         ScheduleRecurrence recurrence = ScheduleRecurrence.None,
-        ScheduleKind kind = ScheduleKind.Event)
+        ScheduleKind kind = ScheduleKind.Event,
+        string? notes = null)
     {
         var request = new CreateScheduleRequest(
             title,
             date ?? new DateOnly(2026, 11, 20),
             start,
             end,
-            null,
+            notes,
             recurrence,
             kind);
 

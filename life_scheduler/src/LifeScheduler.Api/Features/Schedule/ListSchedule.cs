@@ -17,6 +17,7 @@ public static class ListSchedule
         DateTimeOffset CreatedAt,
         ScheduleRecurrence Recurrence,
         ScheduleKind Kind,
+        ScheduleResult Result,
         int AttachmentCount);
 
     public static async Task<Ok<IReadOnlyList<Response>>> Handle(
@@ -26,7 +27,8 @@ public static class ListSchedule
         CancellationToken ct)
     {
         var query = db.Schedules.AsNoTracking()
-            // Календарь показывает только актуальное: выполненное и прошедшее живёт в истории.
+            // Активные записи и история одного диапазона: прошедшее и отмеченное
+            // календарь показывает приглушённым, но не прячет.
             .Where(e => e.Status == ScheduleStatus.Active);
 
         // Повторяющиеся записи отбираем по дате первого вхождения — дальше они разворачиваются в даты диапазона.
@@ -47,6 +49,7 @@ public static class ListSchedule
                 e.CreatedAt,
                 e.Recurrence,
                 e.Kind,
+                ScheduleResult.None,
                 db.Set<ScheduleAttachment>()
                     .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
             .ToListAsync(ct);
@@ -59,13 +62,40 @@ public static class ListSchedule
 
         var completedByHabit = await LoadCompletedOccurrencesAsync(db, rows, ct);
 
-        var items = rows
+        var activeItems = rows
             .SelectMany(row => OccurrenceRules.Dates(row.Date, row.Recurrence, from.Value, to.Value)
-                .Where(date => !completedByHabit.Contains((row.Id, date)))
-                .Select(date => row with { Date = date }))
-            .ToList();
+                .Select(date => row with
+                {
+                    Date = date,
+                    Result = row.Kind == ScheduleKind.Habit
+                             && completedByHabit.Contains((row.Id, date))
+                        ? ScheduleResult.Completed
+                        : ScheduleResult.None,
+                }));
 
-        return TypedResults.Ok<IReadOnlyList<Response>>(Order(items));
+        var archived = await db.Schedules
+            .AsNoTracking()
+            .Where(e => e.Status == ScheduleStatus.Archived
+                        && e.Date >= from.Value
+                        && e.Date <= to.Value)
+            .Select(e => new Response(
+                e.Id,
+                e.Title,
+                e.Date,
+                e.Start,
+                e.End,
+                e.Notes,
+                e.CreatedAt,
+                e.Recurrence,
+                e.Kind,
+                e.Kind == ScheduleKind.Task
+                    ? e.CompletedAt != null ? ScheduleResult.Completed : ScheduleResult.Missed
+                    : ScheduleResult.None,
+                db.Set<ScheduleAttachment>()
+                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
+            .ToListAsync(ct);
+
+        return TypedResults.Ok<IReadOnlyList<Response>>(Order(activeItems.Concat(archived)));
     }
 
     private static async Task<HashSet<(Guid Id, DateOnly Date)>> LoadCompletedOccurrencesAsync(

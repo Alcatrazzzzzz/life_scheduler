@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Check, Repeat, Sun } from 'lucide-react'
+import { Repeat, Sun } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   HOURS_IN_DAY,
@@ -19,6 +19,7 @@ import {
   toTimeString,
 } from '../calendar'
 import { NOW_TICK_MS } from '../useNow'
+import { EntryMark } from './EntryMark'
 
 interface WeekViewProps {
   days: Date[]
@@ -93,24 +94,17 @@ export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekV
                 <div className="week-allday__chips">
                   {untimed.map((entry) => {
                     const past = isEntryPast(entry, now)
+                    const history = entry.result === 'completed' || entry.result === 'missed'
 
                     return (
                       <button
                         type="button"
-                        className={`week-chip${past ? ' week-chip--past' : ''}`}
+                        className={`week-chip${past || history ? ' week-chip--past' : ''}`}
                         key={`${entry.id}-${entry.date}`}
                         onClick={() => onEntryClick(entry)}
                       >
                         <span className="week-chip__title">{entry.title}</span>
-                        {past && (
-                          <Check
-                            className="entry-past"
-                            size={13}
-                            strokeWidth={1.5}
-                            role="img"
-                            aria-label="Прошло"
-                          />
-                        )}
+                        <EntryMark result={entry.result} past={past} />
                         {entry.recurrence !== 'none' && (
                           <Repeat
                             className="entry-repeat"
@@ -175,13 +169,14 @@ export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekV
                 )
                 const height = ((end - start) / 60) * HOUR_HEIGHT
                 const past = isEntryPast(entry, now)
+                const history = entry.result === 'completed' || entry.result === 'missed'
 
                 return (
                   <button
                     key={`${entry.id}-${entry.date}`}
                     type="button"
                     className={`week-event${height < 44 ? ' week-event--short' : ''}${
-                      past ? ' week-event--past' : ''
+                      past || history ? ' week-event--past' : ''
                     }`}
                     style={{
                       top: (start / 60) * HOUR_HEIGHT,
@@ -193,15 +188,7 @@ export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekV
                   >
                     <span className="week-event__time">
                       {formatTimeRange(entry.start, entry.end)}
-                      {past && (
-                        <Check
-                          className="entry-past"
-                          size={13}
-                          strokeWidth={1.5}
-                          role="img"
-                          aria-label="Прошло"
-                        />
-                      )}
+                      <EntryMark result={entry.result} past={past} />
                       {entry.recurrence !== 'none' && (
                         <Repeat
                           className="entry-repeat"

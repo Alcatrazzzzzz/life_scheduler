@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using LifeScheduler.Api.Features.Completion;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Shared.Data;
 using LifeScheduler.Tests.Support;
@@ -84,5 +85,107 @@ public sealed class HistoryEndpointsTests
         Assert.NotNull(history);
         var item = Assert.Single(history);
         Assert.Equal(1, item.AttachmentCount);
+    }
+
+    [Fact]
+    public async Task History_FilterByQuery_MatchesTitleAndNotesIgnoringCase()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Сдать отчёт", new DateOnly(2026, 11, 19));
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Позвонить клиенту", new DateOnly(2026, 11, 18),
+            notes: "Обсудить ОТЧЁТ за квартал");
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Прогулка", new DateOnly(2026, 11, 18));
+
+        var history = await GetHistoryAsync(client, "?q=отчёт");
+
+        Assert.Equal(
+            ["Сдать отчёт", "Позвонить клиенту"],
+            history.Select(entry => entry.Title));
+    }
+
+    [Fact]
+    public async Task History_FilterByDateRange_ReturnsOnlyEntriesInsideRange()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Вчера", new DateOnly(2026, 11, 19));
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Позавчера", new DateOnly(2026, 11, 18));
+
+        var history = await GetHistoryAsync(client, "?from=2026-11-19&to=2026-11-19");
+
+        var item = Assert.Single(history);
+        Assert.Equal("Вчера", item.Title);
+    }
+
+    [Fact]
+    public async Task History_FilterByKindAndResult_ReturnsMatchingEntries()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Встреча", new DateOnly(2026, 11, 19));
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Пропущенная задача", new DateOnly(2026, 11, 19),
+            kind: ScheduleKind.Task);
+
+        var completedId = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Выполненная задача", new DateOnly(2026, 11, 18),
+            kind: ScheduleKind.Task);
+        var completeResponse = await client.PostAsJsonAsync(
+            $"/api/schedules/{completedId}/completion",
+            new CompleteScheduleRequest(new DateOnly(2026, 11, 18)));
+        Assert.True(completeResponse.IsSuccessStatusCode);
+
+        var missed = await GetHistoryAsync(client, "?kind=task&result=missed");
+        var missedItem = Assert.Single(missed);
+        Assert.Equal("Пропущенная задача", missedItem.Title);
+
+        var completed = await GetHistoryAsync(client, "?result=completed");
+        var completedItem = Assert.Single(completed);
+        Assert.Equal("Выполненная задача", completedItem.Title);
+    }
+
+    [Fact]
+    public async Task History_FilterByAttachments_ReturnsOnlyEntriesWithFiles()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var withFileId = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "С файлом", new DateOnly(2026, 11, 19));
+        await ScheduleTestHelpers.UploadAndConfirmAsync(
+            client, withFileId, "отчёт.pdf", "application/pdf", "pdf"u8.ToArray());
+
+        await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Без файла", new DateOnly(2026, 11, 19));
+
+        var history = await GetHistoryAsync(client, "?hasAttachments=true");
+
+        var item = Assert.Single(history);
+        Assert.Equal("С файлом", item.Title);
+    }
+
+    private static async Task<List<ListHistory.Response>> GetHistoryAsync(
+        HttpClient client,
+        string query = "")
+    {
+        var history = await client.GetFromJsonAsync<List<ListHistory.Response>>(
+            $"/api/schedules/history{query}", ScheduleTestHelpers.JsonOptions);
+
+        Assert.NotNull(history);
+        return history;
     }
 }

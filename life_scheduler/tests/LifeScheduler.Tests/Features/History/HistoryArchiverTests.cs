@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Features.Schedule;
 using LifeScheduler.Api.Shared.Data;
+using LifeScheduler.Api.Shared.Schedule;
 using LifeScheduler.Tests.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -129,7 +130,7 @@ public sealed class HistoryArchiverTests
         var item = Assert.Single(history);
         Assert.Equal(id, item.Id);
         Assert.Equal(ScheduleKind.Task, item.Kind);
-        Assert.Equal(HistoryResult.Missed, item.Result);
+        Assert.Equal(ScheduleResult.Missed, item.Result);
     }
 
     [Fact]

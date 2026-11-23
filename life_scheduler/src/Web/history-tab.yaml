@@ -1,0 +1,124 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Планировщик" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - button "Включить тёмную тему" [ref=e9] [cursor=pointer]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - heading "История" [level=1] [ref=e801]
+        - generic [ref=e31]:
+          - group "Вид календаря" [ref=e32]:
+            - button "Неделя" [ref=e33] [cursor=pointer]
+            - button "Месяц" [ref=e34] [cursor=pointer]
+            - button "История" [active] [pressed] [ref=e35] [cursor=pointer]
+          - button "Новая запись" [ref=e36] [cursor=pointer]
+      - generic [ref=e802]:
+        - search [ref=e803]:
+          - generic [ref=e804]:
+            - generic [ref=e805]: Поиск
+            - searchbox "Поиск" [ref=e806]
+          - generic [ref=e807]:
+            - generic [ref=e808]: С даты
+            - textbox "С даты" [ref=e809]
+          - generic [ref=e810]:
+            - generic [ref=e811]: По дату
+            - textbox "По дату" [ref=e812]
+          - generic [ref=e813]:
+            - generic [ref=e814]: Тип
+            - combobox "Тип" [ref=e815]:
+              - option "Все типы" [selected]
+              - option "Событие"
+              - option "Задача"
+              - option "Привычка"
+          - generic [ref=e816]:
+            - generic [ref=e817]: Итог
+            - combobox "Итог" [ref=e818]:
+              - option "Любой" [selected]
+              - option "Выполнено"
+              - option "Пропущено"
+          - generic [ref=e819] [cursor=pointer]:
+            - checkbox "С файлами" [ref=e820]
+            - generic [ref=e821]: С файлами
+        - generic [ref=e822]:
+          - generic [ref=e823]:
+            - heading "воскресенье, 22 ноября 2026" [level=2] [ref=e824]
+            - list [ref=e825]:
+              - listitem [ref=e826]:
+                - 'button "09:00–10:00 Проверка: встреча" [ref=e827] [cursor=pointer]':
+                  - generic [ref=e828]: 09:00–10:00
+                  - generic [ref=e829]: "Проверка: встреча"
+              - listitem [ref=e830]:
+                - 'button "Без времени Проверка: выполнено Выполнено" [ref=e831] [cursor=pointer]':
+                  - generic [ref=e832]: Без времени
+                  - generic [ref=e833]: "Проверка: выполнено"
+                  - generic [ref=e834]: Выполнено
+              - listitem [ref=e837]:
+                - 'button "Без времени Проверка: пропущено Не выполнена" [ref=e838] [cursor=pointer]':
+                  - generic [ref=e839]: Без времени
+                  - generic [ref=e840]: "Проверка: пропущено"
+                  - generic [ref=e841]: Не выполнена
+          - generic [ref=e845]:
+            - heading "суббота, 21 ноября 2026" [level=2] [ref=e846]
+            - list [ref=e847]:
+              - listitem [ref=e848]:
+                - button "12:00–13:00 123123 Не выполнена 1" [ref=e849] [cursor=pointer]:
+                  - generic [ref=e850]: 12:00–13:00
+                  - generic [ref=e851]: "123123"
+                  - generic [ref=e852]: Не выполнена
+                  - generic [ref=e856]: "1"
+              - listitem [ref=e859]:
+                - 'button "Без времени Проверка: привычка Выполнено" [ref=e860] [cursor=pointer]':
+                  - generic [ref=e861]: Без времени
+                  - generic [ref=e862]: "Проверка: привычка"
+                  - generic [ref=e863]: Выполнено
+          - generic [ref=e866]:
+            - heading "пятница, 20 ноября 2026" [level=2] [ref=e867]
+            - list [ref=e868]:
+              - listitem [ref=e869]:
+                - button "22:00–23:00 123123123 1" [ref=e870] [cursor=pointer]:
+                  - generic [ref=e871]: 22:00–23:00
+                  - generic [ref=e872]: "123123123"
+                  - generic [ref=e873]: "1"
+              - listitem [ref=e876]:
+                - button "21:00–22:00 123123 2" [ref=e877] [cursor=pointer]:
+                  - generic [ref=e878]: 21:00–22:00
+                  - generic [ref=e879]: "123123"
+                  - generic [ref=e880]: "2"
+              - listitem [ref=e883]:
+                - button "17:00–18:00 123123 Выполнено 1" [ref=e884] [cursor=pointer]:
+                  - generic [ref=e885]: 17:00–18:00
+                  - generic [ref=e886]: "123123"
+                  - generic [ref=e887]: Выполнено
+                  - generic [ref=e890]: "1"
+          - generic [ref=e893]:
+            - heading "четверг, 19 ноября 2026" [level=2] [ref=e894]
+            - list [ref=e895]:
+              - listitem [ref=e896]:
+                - button "22:00–23:00 123 1" [ref=e897] [cursor=pointer]:
+                  - generic [ref=e898]: 22:00–23:00
+                  - generic [ref=e899]: "123"
+                  - generic [ref=e900]: "1"
+              - listitem [ref=e903]:
+                - button "21:30–22:30 test" [ref=e904] [cursor=pointer]:
+                  - generic [ref=e905]: 21:30–22:30
+                  - generic [ref=e906]: test
+              - listitem [ref=e907]:
+                - button "21:30–22:30 TEST FILE 1" [ref=e908] [cursor=pointer]:
+                  - generic [ref=e909]: 21:30–22:30
+                  - generic [ref=e910]: TEST FILE
+                  - generic [ref=e911]: "1"
+          - generic [ref=e914]:
+            - heading "среда, 18 ноября 2026" [level=2] [ref=e915]
+            - list [ref=e916]:
+              - listitem [ref=e917]:
+                - button "20:00–21:00 123" [ref=e918] [cursor=pointer]:
+                  - generic [ref=e919]: 20:00–21:00
+                  - generic [ref=e920]: "123"
+          - generic [ref=e921]:
+            - heading "четверг, 12 ноября 2026" [level=2] [ref=e922]
+            - list [ref=e923]:
+              - listitem [ref=e924]:
+                - button "Без времени 123" [ref=e925] [cursor=pointer]:
+                  - generic [ref=e926]: Без времени
+                  - generic [ref=e927]: "123"

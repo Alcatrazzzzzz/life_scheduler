@@ -893,21 +893,43 @@
   color: var(--color-text-muted);
 }
 
+/* Итог из истории: выполненная задача или день привычки, пропущенная задача */
+
+.entry-result {
+  flex: none;
+}
+
+.entry-result--completed {
+  color: var(--color-text-secondary);
+}
+
+.entry-result--missed {
+  color: var(--color-danger);
+}
+
+.week-chip .entry-result {
+  margin-left: auto;
+}
+
+.week-event .entry-result {
+  margin-left: auto;
+}
+
+.month-chip .entry-result {
+  align-self: center;
+  margin-left: auto;
+}
+
+.month-chip .entry-result + .month-chip__repeat {
+  margin-left: 0;
+}
+
 .week-chip .entry-past {
   margin-left: auto;
 }
 
 .week-event--past .entry-past {
   margin-left: auto;
-}
-
-.month-chip__past {
-  align-self: center;
-  margin-left: auto;
-}
-
-.month-chip__past + .month-chip__repeat {
-  margin-left: 0;
 }
 
 /* Вложения */
@@ -1204,10 +1226,87 @@
 .history-view {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
   max-height: clamp(495px, calc(100svh - 225px), 835px);
   padding: var(--space-4) var(--space-6) var(--space-6);
+}
+
+.history-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
   overflow-y: auto;
+}
+
+.history-filters {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+  padding: var(--space-3);
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control);
+}
+
+.history-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-group-label-size);
+  font-weight: var(--font-weight-control);
+  color: var(--color-text-secondary);
+}
+
+.history-filters__field--grow {
+  flex: 1 1 200px;
+}
+
+.history-filters__field input,
+.history-filters__field select {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-size: var(--font-meta-size);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  transition: border-color var(--duration-base) var(--ease-standard);
+}
+
+.history-filters__field input:hover,
+.history-filters__field select:hover {
+  border-color: var(--color-text-muted);
+}
+
+.history-filters__field input:focus,
+.history-filters__field select:focus {
+  border-color: var(--color-text-secondary);
+}
+
+.history-filters__check {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: var(--control-height-sm);
+  font-size: var(--font-meta-size);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.history-filters__check input {
+  width: auto;
+  accent-color: var(--color-text);
+}
+
+.history-filters__reset {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-3);
+  font-size: var(--font-meta-size);
 }
 
 .history-day {

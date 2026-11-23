@@ -1,4 +1,4 @@
-import { Check, Repeat } from 'lucide-react'
+import { Repeat } from 'lucide-react'
 import type { ScheduleEntry } from '../api'
 import {
   WEEKDAY_LABELS,
@@ -7,6 +7,7 @@ import {
   isToday,
   toDateString,
 } from '../calendar'
+import { EntryMark } from './EntryMark'
 
 interface MonthViewProps {
   anchor: Date
@@ -58,11 +59,12 @@ export function MonthView({ anchor, days, entries, now, onCreateAt, onEntryClick
               <div className="month-cell__entries">
                 {visible.map((entry) => {
                   const past = isEntryPast(entry, now)
+                  const history = entry.result === 'completed' || entry.result === 'missed'
 
                   return (
                     <button
                       type="button"
-                      className={`month-chip${past ? ' month-chip--past' : ''}`}
+                      className={`month-chip${past || history ? ' month-chip--past' : ''}`}
                       key={`${entry.id}-${entry.date}`}
                       onClick={() => onEntryClick(entry)}
                     >
@@ -70,15 +72,7 @@ export function MonthView({ anchor, days, entries, now, onCreateAt, onEntryClick
                         <span className="month-chip__time">{entry.start.slice(0, 5)}</span>
                       )}
                       <span className="month-chip__title">{entry.title}</span>
-                      {past && (
-                        <Check
-                          className="entry-past month-chip__past"
-                          size={13}
-                          strokeWidth={1.5}
-                          role="img"
-                          aria-label="Прошло"
-                        />
-                      )}
+                      <EntryMark result={entry.result} past={past} />
                       {entry.recurrence !== 'none' && (
                         <Repeat
                           className="entry-repeat month-chip__repeat"

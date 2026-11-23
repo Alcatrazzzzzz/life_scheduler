@@ -43,6 +43,15 @@ export interface AttachmentUploadTicket {
   }
 }
 
+export interface HistoryFilters {
+  from?: string
+  to?: string
+  query?: string
+  kind?: ScheduleKind
+  result?: ScheduleResult
+  hasAttachments?: boolean
+}
+
 export interface CreateScheduleInput {
   title: string
   date: string
@@ -120,8 +129,17 @@ export async function getSchedule(id: string): Promise<ScheduleDetail> {
   return (await res.json()) as ScheduleDetail
 }
 
-export async function listHistory(): Promise<ScheduleEntry[]> {
-  const res = await fetch('/api/schedules/history')
+export async function listHistory(filters: HistoryFilters = {}): Promise<ScheduleEntry[]> {
+  const params = new URLSearchParams()
+  if (filters.from) params.set('from', filters.from)
+  if (filters.to) params.set('to', filters.to)
+  if (filters.query) params.set('q', filters.query)
+  if (filters.kind) params.set('kind', filters.kind)
+  if (filters.result) params.set('result', filters.result)
+  if (filters.hasAttachments) params.set('hasAttachments', 'true')
+
+  const query = params.toString()
+  const res = await fetch(`/api/schedules/history${query ? `?${query}` : ''}`)
   if (!res.ok) throw await toApiError(res)
 
   return (await res.json()) as ScheduleEntry[]

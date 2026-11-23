@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import {
+  keepPreviousData,
   useMutation,
   useQueries,
   useQuery,
@@ -18,7 +19,7 @@ import {
   uncompleteSchedule,
   uploadAttachment,
 } from './api'
-import type { ScheduleEntry } from './api'
+import type { HistoryFilters, ScheduleEntry } from './api'
 import { monthRange, monthsCovering, startOfToday } from './calendar'
 
 const PREFETCH_MONTHS_AHEAD = 12
@@ -31,7 +32,8 @@ export const scheduleKeys = {
   detail: (id: string) => [...scheduleKeys.all, 'detail', id] as const,
   attachment: (scheduleId: string, attachmentId: string) =>
     [...scheduleKeys.all, 'attachment', scheduleId, attachmentId] as const,
-  history: ['schedule', 'history'] as const,
+  history: (filters: HistoryFilters = {}) =>
+    [...scheduleKeys.all, 'history', filters] as const,
 }
 
 interface ListFilter {
@@ -201,10 +203,12 @@ export function useAttachmentBlob(
   })
 }
 
-export function useScheduleHistory() {
+export function useScheduleHistory(filters: HistoryFilters = {}) {
   return useQuery({
-    queryKey: scheduleKeys.history,
-    queryFn: listHistory,
+    queryKey: scheduleKeys.history(filters),
+    queryFn: () => listHistory(filters),
+    // При смене фильтров держим прошлый список, чтобы не мигать лоадером на каждый ввод.
+    placeholderData: keepPreviousData,
     // Архиватор переводит записи раз в минуту — обновляем открытую вкладку истории.
     refetchInterval: 60_000,
   })
