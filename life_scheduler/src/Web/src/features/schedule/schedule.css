@@ -691,9 +691,8 @@
   accent-color: var(--color-text);
 }
 
-.schedule-form input,
-.schedule-form select,
-.schedule-form textarea {
+.schedule-form label input,
+.schedule-form label textarea {
   width: 100%;
   font: inherit;
   font-size: var(--font-field-size);
@@ -705,26 +704,23 @@
   transition: border-color var(--duration-base) var(--ease-standard);
 }
 
-.schedule-form input,
-.schedule-form select {
+.schedule-form label input {
   min-height: var(--control-height);
   padding: 0 var(--space-3);
 }
 
-.schedule-form textarea {
+.schedule-form label textarea {
   padding: var(--space-2) var(--space-3);
   resize: vertical;
 }
 
-.schedule-form input:hover,
-.schedule-form select:hover,
-.schedule-form textarea:hover {
+.schedule-form label input:hover,
+.schedule-form label textarea:hover {
   border-color: var(--color-text-muted);
 }
 
-.schedule-form input:focus,
-.schedule-form select:focus,
-.schedule-form textarea:focus {
+.schedule-form label input:focus,
+.schedule-form label textarea:focus {
   border-color: var(--color-text-secondary);
 }
 
@@ -1264,8 +1260,7 @@
   flex: 1 1 200px;
 }
 
-.history-filters__field input,
-.history-filters__field select {
+.history-filters__field input {
   min-height: var(--control-height-sm);
   padding: 0 var(--space-2);
   font: inherit;
@@ -1277,13 +1272,11 @@
   transition: border-color var(--duration-base) var(--ease-standard);
 }
 
-.history-filters__field input:hover,
-.history-filters__field select:hover {
+.history-filters__field input:hover {
   border-color: var(--color-text-muted);
 }
 
-.history-filters__field input:focus,
-.history-filters__field select:focus {
+.history-filters__field input:focus {
   border-color: var(--color-text-secondary);
 }
 
@@ -1429,7 +1422,6 @@
   .attachment-preview__tab,
   .modal__close,
   .schedule-form input,
-  .schedule-form select,
   .schedule-form textarea {
     transition: none;
   }

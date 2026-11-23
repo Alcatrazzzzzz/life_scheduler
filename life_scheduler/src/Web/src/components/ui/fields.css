@@ -1,0 +1,431 @@
+/* Общие поля ввода с поповерами: дата, время, список значений. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.field__label {
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+  color: var(--color-text-secondary);
+}
+
+.field--sm .field__label {
+  font-size: var(--font-group-label-size);
+}
+
+.field--sm {
+  gap: var(--space-1);
+}
+
+.field__control {
+  position: relative;
+  min-width: 0;
+}
+
+.field-trigger {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  width: 100%;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-field-size);
+  font-weight: var(--font-weight-body);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  transition: border-color var(--duration-base) var(--ease-standard);
+}
+
+.field--sm .field-trigger {
+  min-height: var(--control-height-sm);
+  padding: 0 var(--space-2);
+  font-size: var(--font-meta-size);
+}
+
+.field-trigger:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+}
+
+.field-trigger:focus-visible {
+  border-color: var(--color-text-secondary);
+}
+
+.field-trigger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.field-trigger__icon,
+.field-trigger__chevron {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.field-trigger__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-trigger__value--empty {
+  color: var(--color-text-muted);
+}
+
+/* Поле с ручным вводом (время) */
+
+.field-input-group {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 var(--space-1) 0 var(--space-3);
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  transition: border-color var(--duration-base) var(--ease-standard);
+}
+
+.field--sm .field-input-group {
+  min-height: var(--control-height-sm);
+  padding: 0 2px 0 var(--space-2);
+}
+
+.field-input-group:hover:not(:focus-within) {
+  border-color: var(--color-text-muted);
+}
+
+.field-input-group:focus-within {
+  border-color: var(--color-text-secondary);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.field-input-group__icon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+/* Селекторы с потомком: поле обязано оставаться плоским даже внутри форм,
+   которые стилизуют все input подряд. */
+.field-input-group .field-input-group__input {
+  flex: 1;
+  min-width: 0;
+  height: calc(var(--control-height) - 2 * var(--border-width));
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-field-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.field--sm .field-input-group .field-input-group__input {
+  height: calc(var(--control-height-sm) - 2 * var(--border-width));
+  font-size: var(--font-meta-size);
+}
+
+.field-input-group .field-input-group__input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.field-input-group .field-input-group__input:focus-visible {
+  outline: none;
+}
+
+.field-input-group__button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.field-input-group__button:hover:not(:disabled) {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+
+/* Поповер */
+
+.popover {
+  position: fixed;
+  z-index: 5;
+  padding: var(--space-2);
+  background: var(--color-surface-raised);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 0 24px var(--color-shadow);
+  animation: popover-in var(--duration-base) var(--ease-out);
+}
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Календарь */
+
+.date-picker {
+  width: 252px;
+}
+
+.date-picker__header {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-1) var(--space-1) var(--space-2);
+}
+
+.date-picker__title {
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+}
+
+.date-picker__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.date-picker__weekdays span {
+  padding: var(--space-1) 0;
+  font-size: var(--font-group-label-size);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.date-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.date-picker__day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-meta-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard),
+    box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.date-picker__day:hover:not(:disabled) {
+  background: var(--color-surface-input);
+}
+
+.date-picker__day:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+  opacity: 0.35;
+}
+
+.date-picker__day--outside {
+  color: var(--color-text-muted);
+}
+
+.date-picker__day--today {
+  box-shadow: inset 0 0 0 var(--border-width) var(--color-border);
+}
+
+.date-picker__day--selected,
+.date-picker__day--selected:hover {
+  color: var(--color-inverse-text);
+  background: var(--color-inverse-bg);
+  box-shadow: none;
+}
+
+.date-picker__footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--color-border-neutral);
+}
+
+.picker-icon-button,
+.picker-link {
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.picker-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
+  padding: 0;
+  color: var(--color-text-secondary);
+}
+
+.picker-icon-button:hover {
+  color: var(--color-text);
+  background: var(--color-surface-input);
+}
+
+.picker-link {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-meta-size);
+  color: var(--color-text-secondary);
+}
+
+.picker-link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-input);
+}
+
+/* Время */
+
+.time-picker {
+  display: flex;
+  height: 226px;
+}
+
+.time-picker__column {
+  position: relative;
+  width: 60px;
+  padding: 2px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.time-picker__column + .time-picker__column {
+  padding-left: var(--space-1);
+  border-left: var(--border-width) solid var(--color-border-neutral);
+}
+
+.time-picker__option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 30px;
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-meta-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.time-picker__option:hover {
+  background: var(--color-surface-input);
+}
+
+.time-picker__option[aria-selected='true'] {
+  color: var(--color-inverse-text);
+  background: var(--color-inverse-bg);
+}
+
+/* Список значений */
+
+.select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  padding: 2px;
+  overflow-y: auto;
+}
+
+.select-option {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-field-size);
+  color: var(--color-text);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control-sm);
+  transition:
+    background-color var(--duration-base) var(--ease-standard),
+    color var(--duration-base) var(--ease-standard);
+}
+
+.select-option:hover {
+  background: var(--color-surface-input);
+}
+
+.select-option[aria-selected='true'] {
+  background: var(--color-surface-selected);
+}
+
+.select-option__label {
+  flex: 1;
+}
+
+.select-option__check {
+  flex: none;
+  color: var(--color-text-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+
+  .field-trigger,
+  .field-input-group,
+  .field-input-group__button,
+  .date-picker__day,
+  .time-picker__option,
+  .select-option,
+  .picker-icon-button,
+  .picker-link {
+    transition: none;
+  }
+}

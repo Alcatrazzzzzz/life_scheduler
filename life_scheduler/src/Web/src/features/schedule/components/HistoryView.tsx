@@ -8,15 +8,19 @@ import {
   parseDateString,
 } from '../calendar'
 import { useScheduleHistory } from '../queries'
+import { DateField } from '../../../components/ui/DateField'
+import { SelectField, type SelectOption } from '../../../components/ui/SelectField'
 import { Loader } from './Loader'
 
-const KIND_OPTIONS: { value: ScheduleKind; label: string }[] = [
+const KIND_OPTIONS: SelectOption<ScheduleKind | ''>[] = [
+  { value: '', label: 'Все типы' },
   { value: 'event', label: 'Событие' },
   { value: 'task', label: 'Задача' },
   { value: 'habit', label: 'Привычка' },
 ]
 
-const RESULT_OPTIONS: { value: ScheduleResult; label: string }[] = [
+const RESULT_OPTIONS: SelectOption<ScheduleResult | ''>[] = [
+  { value: '', label: 'Любой' },
   { value: 'completed', label: 'Выполнено' },
   { value: 'missed', label: 'Пропущено' },
 ]
@@ -148,55 +152,33 @@ export function HistoryView({ onEntryClick }: HistoryViewProps) {
           />
         </label>
 
-        <label className="history-filters__field">
-          <span>С даты</span>
-          <input
-            type="date"
-            value={from}
-            max={to || undefined}
-            onChange={(event) => setFrom(event.target.value)}
-          />
-        </label>
+        <DateField
+          label="С даты"
+          value={from}
+          onChange={setFrom}
+          clearable
+          max={to || undefined}
+          size="sm"
+        />
 
-        <label className="history-filters__field">
-          <span>По дату</span>
-          <input
-            type="date"
-            value={to}
-            min={from || undefined}
-            onChange={(event) => setTo(event.target.value)}
-          />
-        </label>
+        <DateField
+          label="По дату"
+          value={to}
+          onChange={setTo}
+          clearable
+          min={from || undefined}
+          size="sm"
+        />
 
-        <label className="history-filters__field">
-          <span>Тип</span>
-          <select
-            value={kind}
-            onChange={(event) => setKind(event.target.value as ScheduleKind | '')}
-          >
-            <option value="">Все типы</option>
-            {KIND_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField label="Тип" value={kind} options={KIND_OPTIONS} onChange={setKind} size="sm" />
 
-        <label className="history-filters__field">
-          <span>Итог</span>
-          <select
-            value={result}
-            onChange={(event) => setResult(event.target.value as ScheduleResult | '')}
-          >
-            <option value="">Любой</option>
-            {RESULT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Итог"
+          value={result}
+          options={RESULT_OPTIONS}
+          onChange={setResult}
+          size="sm"
+        />
 
         <label className="history-filters__check">
           <input

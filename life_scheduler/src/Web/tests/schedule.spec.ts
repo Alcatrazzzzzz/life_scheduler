@@ -1,4 +1,19 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
+
+const MONTHS_GENITIVE = [
+  'января',
+  'февраля',
+  'марта',
+  'апреля',
+  'мая',
+  'июня',
+  'июля',
+  'августа',
+  'сентября',
+  'октября',
+  'ноября',
+  'декабря',
+]
 
 function localDateString(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -6,11 +21,47 @@ function localDateString(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
+function displayDate(iso: string): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  return `${day} ${MONTHS_GENITIVE[month - 1]} ${year}`
+}
+
 async function openCreateDialog(page: Page) {
   await page.getByRole('button', { name: 'Новая запись', exact: true }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()
   return dialog
+}
+
+async function pickDate(dialog: Locator, iso: string) {
+  await dialog.getByRole('button', { name: /^Дата:/ }).click()
+  const panel = dialog.getByRole('dialog', { name: 'Дата' })
+  const day = panel.locator(`[data-date="${iso}"]`)
+
+  // Пикер открывается на выбранной дате; соседний месяц листаем назад.
+  for (let attempt = 0; attempt < 2 && (await day.count()) === 0; attempt += 1) {
+    await panel.getByRole('button', { name: 'Предыдущий месяц' }).click()
+  }
+
+  await day.click()
+  await expect(panel).toBeHidden()
+}
+
+async function pickTime(dialog: Locator, label: string, value: string) {
+  await dialog.getByRole('button', { name: new RegExp(`^${label}:`) }).click()
+  const panel = dialog.getByRole('dialog', { name: label })
+  const [hours, minutes] = value.split(':')
+
+  await panel
+    .getByRole('listbox', { name: 'Часы' })
+    .getByRole('option', { name: hours, exact: true })
+    .click()
+  await panel
+    .getByRole('listbox', { name: 'Минуты' })
+    .getByRole('option', { name: minutes, exact: true })
+    .click()
+
+  await expect(panel).toBeHidden()
 }
 
 test('create schedule entry without time', async ({ page }) => {
@@ -21,7 +72,7 @@ test('create schedule entry without time', async ({ page }) => {
 
   const dialog = await openCreateDialog(page)
   await dialog.getByLabel('Название').fill(title)
-  await dialog.getByLabel('Дата').fill(today)
+  await pickDate(dialog, today)
   await dialog.getByLabel('Без времени').check()
   await dialog.getByRole('button', { name: 'Сохранить' }).click()
   await expect(dialog).toBeHidden()
@@ -44,9 +95,9 @@ test('create schedule event', async ({ page }) => {
 
   const dialog = await openCreateDialog(page)
   await dialog.getByLabel('Название').fill(title)
-  await dialog.getByLabel('Дата').fill(today)
-  await dialog.getByLabel('Начало').fill('10:00')
-  await dialog.getByLabel('Окончание').fill('10:30')
+  await pickDate(dialog, today)
+  await dialog.getByRole('textbox', { name: 'Начало' }).fill('10:00')
+  await pickTime(dialog, 'Окончание', '10:30')
   await dialog.getByRole('button', { name: 'Сохранить' }).click()
   await expect(dialog).toBeHidden()
 
@@ -71,9 +122,9 @@ test('clicking a time slot prefills the form', async ({ page }) => {
     .click()
 
   const dialog = page.getByRole('dialog')
-  await expect(dialog.getByLabel('Дата')).toHaveValue(today)
-  await expect(dialog.getByLabel('Начало')).toHaveValue('14:00')
-  await expect(dialog.getByLabel('Окончание')).toHaveValue('15:00')
+  await expect(dialog.getByRole('button', { name: `Дата: ${displayDate(today)}` })).toBeVisible()
+  await expect(dialog.getByRole('textbox', { name: 'Начало' })).toHaveValue('14:00')
+  await expect(dialog.getByRole('textbox', { name: 'Окончание' })).toHaveValue('15:00')
 
   await dialog.getByRole('button', { name: 'Отмена' }).click()
   await expect(dialog).toBeHidden()
@@ -87,7 +138,7 @@ test('create schedule entry with a file from the form', async ({ page }) => {
 
   const dialog = await openCreateDialog(page)
   await dialog.getByLabel('Название').fill(title)
-  await dialog.getByLabel('Дата').fill(today)
+  await pickDate(dialog, today)
   await dialog.getByLabel('Без времени').check()
   await dialog.locator('input[type="file"]').setInputFiles({
     name: 'план.txt',
@@ -119,7 +170,7 @@ test('history keeps past entries and lets you attach files', async ({ page }) =>
 
   const dialog = await openCreateDialog(page)
   await dialog.getByLabel('Название').fill(title)
-  await dialog.getByLabel('Дата').fill(yesterday)
+  await pickDate(dialog, yesterday)
   await dialog.getByLabel('Без времени').check()
   await dialog.getByRole('button', { name: 'Сохранить' }).click()
   await expect(dialog).toBeHidden()

@@ -4,7 +4,26 @@ import type { ScheduleKind, ScheduleRecurrence } from '../api'
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../attachmentLimits'
 import { formatFileSize } from '../format'
 import { useAddAttachments, useCreateSchedule } from '../queries'
+import { DateField } from '../../../components/ui/DateField'
+import { SelectField, type SelectOption } from '../../../components/ui/SelectField'
+import { TimeField } from '../../../components/ui/TimeField'
 import { Modal } from './Modal'
+
+const KIND_OPTIONS: SelectOption<ScheduleKind>[] = [
+  { value: 'event', label: 'Событие' },
+  { value: 'task', label: 'Задача' },
+  { value: 'habit', label: 'Привычка' },
+]
+
+const EVENT_RECURRENCE_OPTIONS: SelectOption<ScheduleRecurrence>[] = [
+  { value: 'none', label: 'Не повторять' },
+  { value: 'daily', label: 'Каждый день' },
+  { value: 'weekly', label: 'Каждую неделю' },
+]
+
+const HABIT_RECURRENCE_OPTIONS = EVENT_RECURRENCE_OPTIONS.filter(
+  (option) => option.value !== 'none',
+)
 
 export interface CreateDraft {
   date: string
@@ -39,14 +58,6 @@ function formFromDraft(draft: CreateDraft): FormState {
     recurrence: 'none',
     kind: 'event',
   }
-}
-
-function isRecurrence(value: string): value is ScheduleRecurrence {
-  return value === 'none' || value === 'daily' || value === 'weekly'
-}
-
-function isKind(value: string): value is ScheduleKind {
-  return value === 'event' || value === 'task' || value === 'habit'
 }
 
 export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogProps) {
@@ -170,29 +181,18 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
             />
           </label>
 
-          <label>
-            Тип
-            <select
-              value={form.kind}
-              onChange={(e) => {
-                if (isKind(e.target.value)) updateKind(e.target.value)
-              }}
-            >
-              <option value="event">Событие</option>
-              <option value="task">Задача</option>
-              <option value="habit">Привычка</option>
-            </select>
-          </label>
+          <SelectField
+            label="Тип"
+            value={form.kind}
+            options={KIND_OPTIONS}
+            onChange={updateKind}
+          />
 
-          <label>
-            Дата
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => update('date', e.target.value)}
-              required
-            />
-          </label>
+          <DateField
+            label="Дата"
+            value={form.date}
+            onChange={(value) => update('date', value)}
+          />
 
           <label className="schedule-form-checkbox">
             <input
@@ -205,42 +205,29 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
 
           {!form.untimed && (
             <div className="schedule-form-row">
-              <label>
-                Начало
-                <input
-                  type="time"
-                  value={form.start}
-                  onChange={(e) => update('start', e.target.value)}
-                  required
-                />
-              </label>
+              <TimeField
+                label="Начало"
+                value={form.start}
+                onChange={(value) => update('start', value)}
+              />
 
-              <label>
-                Окончание
-                <input
-                  type="time"
-                  value={form.end}
-                  onChange={(e) => update('end', e.target.value)}
-                  required
-                />
-              </label>
+              <TimeField
+                label="Окончание"
+                value={form.end}
+                onChange={(value) => update('end', value)}
+              />
             </div>
           )}
 
           {form.kind !== 'task' && (
-            <label>
-              Повторение
-              <select
-                value={form.recurrence}
-                onChange={(e) => {
-                  if (isRecurrence(e.target.value)) update('recurrence', e.target.value)
-                }}
-              >
-                {form.kind === 'event' && <option value="none">Не повторять</option>}
-                <option value="daily">Каждый день</option>
-                <option value="weekly">Каждую неделю</option>
-              </select>
-            </label>
+            <SelectField
+              label="Повторение"
+              value={form.recurrence}
+              options={
+                form.kind === 'habit' ? HABIT_RECURRENCE_OPTIONS : EVENT_RECURRENCE_OPTIONS
+              }
+              onChange={(value) => update('recurrence', value)}
+            />
           )}
 
           <label>
