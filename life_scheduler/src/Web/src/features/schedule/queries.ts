@@ -17,10 +17,12 @@ import {
   listHistory,
   listSchedules,
   uncompleteSchedule,
+  updateSchedule,
   uploadAttachment,
 } from './api'
-import type { HistoryFilters, ScheduleEntry } from './api'
+import type { HistoryFilters, ScheduleEntry, UpdateScheduleInput } from './api'
 import { monthRange, monthsCovering, startOfToday } from './calendar'
+import { invalidatePlanningData } from '../../lib/invalidatePlanningData'
 
 const PREFETCH_MONTHS_AHEAD = 12
 const PREFETCH_MONTHS_BEHIND = 3
@@ -181,11 +183,25 @@ export function useSchedulePrefetch(enabled: boolean) {
   }, [enabled, queryClient])
 }
 
-export function useSchedule(id: string, enabled = true) {
+export function useSchedule(id: string, date?: string, enabled = true) {
   return useQuery({
-    queryKey: scheduleKeys.detail(id),
-    queryFn: () => getSchedule(id),
+    queryKey: [...scheduleKeys.detail(id), date ?? null],
+    queryFn: () => getSchedule(id, date),
     enabled,
+  })
+}
+
+export function useHabitOptions(enabled = true) {
+  return useQuery({
+    queryKey: [...scheduleKeys.all, 'habit-options'],
+    queryFn: async () => {
+      const entries = await listSchedules()
+      return entries
+        .filter((entry) => entry.kind === 'habit')
+        .map((entry) => ({ id: entry.id, title: entry.title }))
+    },
+    enabled,
+    staleTime: 60_000,
   })
 }
 
@@ -221,8 +237,18 @@ export function useCreateSchedule() {
     mutationFn: createSchedule,
     onSuccess: (created) => {
       addToListCaches(queryClient, created)
-      void queryClient.invalidateQueries({ queryKey: scheduleKeys.all })
+      void invalidatePlanningData(queryClient)
     },
+  })
+}
+
+export function useUpdateSchedule() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateScheduleInput }) =>
+      updateSchedule(id, input),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -231,7 +257,7 @@ export function useDeleteSchedule() {
 
   return useMutation({
     mutationFn: deleteSchedule,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -240,7 +266,7 @@ export function useCompleteSchedule() {
 
   return useMutation({
     mutationFn: ({ id, date }: { id: string; date: string }) => completeSchedule(id, date),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -249,7 +275,7 @@ export function useUncompleteSchedule() {
 
   return useMutation({
     mutationFn: ({ id, date }: { id: string; date: string }) => uncompleteSchedule(id, date),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -258,7 +284,7 @@ export function useAddAttachment(scheduleId: string) {
 
   return useMutation({
     mutationFn: (file: File) => uploadAttachment(scheduleId, file),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -271,7 +297,7 @@ export function useAddAttachments() {
         await uploadAttachment(scheduleId, file)
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }
 
@@ -280,6 +306,6 @@ export function useDeleteAttachment(scheduleId: string) {
 
   return useMutation({
     mutationFn: (attachmentId: string) => deleteAttachment(scheduleId, attachmentId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: scheduleKeys.all }),
+    onSuccess: () => invalidatePlanningData(queryClient),
   })
 }

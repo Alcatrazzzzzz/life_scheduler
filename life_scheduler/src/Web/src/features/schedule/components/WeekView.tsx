@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Repeat, Sun } from 'lucide-react'
+import { StreakBadge } from '../../../components/ui/StreakBadge'
 import type { ScheduleEntry } from '../api'
 import {
   HOURS_IN_DAY,
@@ -105,6 +106,9 @@ export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekV
                       >
                         <span className="week-chip__title">{entry.title}</span>
                         <EntryMark result={entry.result} past={past} />
+                        {entry.kind === 'habit' && entry.streak ? (
+                          <StreakBadge value={entry.streak} />
+                        ) : null}
                         {entry.recurrence !== 'none' && (
                           <Repeat
                             className="entry-repeat"
@@ -189,6 +193,9 @@ export function WeekView({ days, entries, now, onCreateAt, onEntryClick }: WeekV
                     <span className="week-event__time">
                       {formatTimeRange(entry.start, entry.end)}
                       <EntryMark result={entry.result} past={past} />
+                      {entry.kind === 'habit' && entry.streak ? (
+                        <StreakBadge value={entry.streak} />
+                      ) : null}
                       {entry.recurrence !== 'none' && (
                         <Repeat
                           className="entry-repeat"

@@ -3,11 +3,12 @@ import { FileText, Paperclip, Trash2 } from 'lucide-react'
 import type { ScheduleKind, ScheduleRecurrence } from '../api'
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../attachmentLimits'
 import { formatFileSize } from '../format'
-import { useAddAttachments, useCreateSchedule } from '../queries'
+import { useAddAttachments, useCreateSchedule, useHabitOptions } from '../queries'
 import { DateField } from '../../../components/ui/DateField'
+import { HabitExtraFields } from '../../../components/ui/HabitExtraFields'
 import { SelectField, type SelectOption } from '../../../components/ui/SelectField'
 import { TimeField } from '../../../components/ui/TimeField'
-import { Modal } from './Modal'
+import { Modal } from '../../../components/ui/Modal'
 
 const KIND_OPTIONS: SelectOption<ScheduleKind>[] = [
   { value: 'event', label: 'Событие' },
@@ -40,6 +41,8 @@ interface FormState {
   untimed: boolean
   recurrence: ScheduleRecurrence
   kind: ScheduleKind
+  reward: string
+  stackAfterId: string
 }
 
 interface CreateScheduleDialogProps {
@@ -57,6 +60,8 @@ function formFromDraft(draft: CreateDraft): FormState {
     untimed: draft.start === null,
     recurrence: 'none',
     kind: 'event',
+    reward: '',
+    stackAfterId: '',
   }
 }
 
@@ -68,6 +73,7 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
   const [isSubmitting, setIsSubmitting] = useState(false)
   const createSchedule = useCreateSchedule()
   const addAttachments = useAddAttachments()
+  const habitOptions = useHabitOptions(form.kind === 'habit')
 
   const busy = isSubmitting || createSchedule.isPending || addAttachments.isPending
   const locked = busy || createdId !== null
@@ -89,6 +95,8 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
           : kind === 'habit' && current.recurrence === 'none'
             ? 'daily'
             : current.recurrence,
+      reward: kind === 'habit' ? current.reward : '',
+      stackAfterId: kind === 'habit' ? current.stackAfterId : '',
     }))
   }
 
@@ -147,6 +155,9 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
           notes: notes.length > 0 ? notes : undefined,
           recurrence: form.recurrence,
           kind: form.kind,
+          reward: form.kind === 'habit' && form.reward.trim() ? form.reward.trim() : null,
+          stackAfterId:
+            form.kind === 'habit' && form.stackAfterId ? form.stackAfterId : null,
         })
 
         scheduleId = created.id
@@ -227,6 +238,18 @@ export function CreateScheduleDialog({ draft, onClose }: CreateScheduleDialogPro
                 form.kind === 'habit' ? HABIT_RECURRENCE_OPTIONS : EVENT_RECURRENCE_OPTIONS
               }
               onChange={(value) => update('recurrence', value)}
+            />
+          )}
+
+          {form.kind === 'habit' && (
+            <HabitExtraFields
+              reward={form.reward}
+              stackAfterId={form.stackAfterId}
+              habits={habitOptions.data ?? []}
+              onChange={(patch) =>
+                setForm((current) => ({ ...current, ...patch }))
+              }
+              disabled={locked}
             />
           )}
 

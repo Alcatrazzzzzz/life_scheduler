@@ -1,0 +1,708 @@
+.habits-page {
+  width: min(100%, var(--content-max));
+  margin: 0 auto;
+  padding: var(--space-10) var(--space-6) var(--space-15);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.habits-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.habits-title {
+  margin: 0;
+  font-size: var(--font-page-title-size);
+  line-height: 1.1;
+  font-weight: var(--font-weight-display);
+  letter-spacing: -0.02em;
+}
+
+.habits-hint {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+}
+
+.habits-empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  border: var(--border-width) dashed var(--color-border);
+  border-radius: var(--radius-panel);
+  color: var(--color-text-secondary);
+}
+
+.habits-empty p {
+  margin: 0;
+}
+
+.habits-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.habits-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.habits-section__title {
+  margin: 0;
+  font-size: var(--font-body-lg-size);
+  font-weight: var(--font-weight-display);
+}
+
+.habits-section__hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta-size);
+}
+
+/* Цепочки на сегодня */
+
+.habit-chains {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.habit-chains__single {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.habit-chains__subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+}
+
+.habit-chain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.habit-chain__item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) var(--control-height-sm);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-raised);
+  transition: border-color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-chain--plain .habit-chain__item {
+  grid-template-columns: minmax(0, 1fr) var(--control-height-sm);
+}
+
+.habit-chain__item:hover {
+  border-color: var(--color-text-muted);
+}
+
+.habit-chain__item--due {
+  border-left: 2px solid var(--color-accent);
+}
+
+.habit-chain__item--blocked {
+  opacity: 0.62;
+}
+
+.habit-chain__item--done {
+  background: var(--color-surface-sunken);
+}
+
+.habit-chain__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-chain__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.habit-chain__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--font-weight-control);
+}
+
+.habit-chain__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+}
+
+.habit-chain__after {
+  color: var(--color-text-muted);
+}
+
+.habit-chain__hint {
+  color: var(--color-text-muted);
+}
+
+.habit-chain__item--due .habit-chain__hint {
+  color: var(--color-accent);
+}
+
+.habit-chain__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-hover) var(--ease-standard),
+    border-color var(--duration-hover) var(--ease-standard),
+    color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-chain__toggle:hover:not(:disabled) {
+  border-color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.habit-chain__toggle[aria-pressed='true'] {
+  border-color: var(--color-text);
+  background: var(--color-text);
+  color: var(--color-inverse-text);
+}
+
+.habit-chain__toggle:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.habit-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-streak--large {
+  color: var(--color-text);
+  font-size: var(--font-field-size);
+  font-weight: var(--font-weight-control);
+}
+
+/* Недельная сетка */
+
+.habit-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.habit-week__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+  border: none;
+  border-radius: var(--radius-control-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background-color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-week__day:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.habit-week__day:disabled {
+  cursor: default;
+}
+
+.habit-week__label {
+  font-size: var(--font-group-label-size);
+  text-transform: lowercase;
+}
+
+.habit-week__mark {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: var(--border-width) solid var(--color-border);
+  background: transparent;
+}
+
+.habit-week__day--done {
+  color: var(--color-text);
+}
+
+.habit-week__day--done .habit-week__mark {
+  border-color: var(--color-text);
+  background: var(--color-text);
+}
+
+.habit-week__day--missed .habit-week__mark {
+  border-color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 18%, transparent);
+}
+
+.habit-week__day--planned .habit-week__mark {
+  border-color: var(--color-text-secondary);
+}
+
+.habit-week__day--future {
+  opacity: 0.45;
+}
+
+.habit-week__day--off {
+  opacity: 0.35;
+}
+
+/* Карточка привычки */
+
+.habit-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.habit-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-tile);
+  background: var(--color-surface-raised);
+  transition: border-color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-card:hover {
+  border-color: var(--color-text-muted);
+}
+
+.habit-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.habit-card__title {
+  margin: 0;
+  font-size: var(--font-body-size);
+  font-weight: var(--font-weight-display);
+}
+
+.habit-card__streak {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+
+.habit-card__best {
+  color: var(--color-text-muted);
+  font-size: var(--font-group-label-size);
+}
+
+.habit-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.habit-card__tag {
+  padding: 2px 6px;
+  border-radius: var(--radius-control-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+}
+
+.habit-card__charts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.habit-card__warning {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control-sm);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  color: var(--color-danger);
+  font-size: var(--font-meta-size);
+}
+
+.habit-card__actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid var(--color-border-neutral);
+}
+
+.habit-card__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.habit-card__delete {
+  margin-left: auto;
+  color: var(--color-danger);
+}
+
+/* Heatmap */
+
+.habit-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.habit-heatmap__week {
+  display: grid;
+  grid-template-columns: repeat(7, 14px);
+  gap: 3px;
+}
+
+.habit-heatmap__cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-surface-sunken);
+}
+
+.habit-heatmap--lg .habit-heatmap__week {
+  grid-template-columns: repeat(7, 24px);
+}
+
+.habit-heatmap--lg .habit-heatmap__cell {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.habit-heatmap__cell--offscreen,
+.habit-heatmap__cell--off {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.habit-heatmap__cell--future {
+  border: 1px dashed var(--color-border);
+  background: transparent;
+}
+
+.habit-heatmap__cell--heat-0 {
+  background: var(--color-surface-sunken);
+}
+
+.habit-heatmap__cell--heat-1 {
+  background: color-mix(in srgb, var(--color-danger) 28%, var(--color-surface-sunken));
+}
+
+.habit-heatmap__cell--heat-2 {
+  background: color-mix(in srgb, var(--color-danger) 62%, var(--color-surface-sunken));
+}
+
+.habit-heatmap__cell--heat-3 {
+  background: color-mix(in srgb, var(--color-accent) 62%, var(--color-surface-sunken));
+}
+
+.habit-heatmap__cell--heat-4 {
+  background: var(--color-accent);
+}
+
+.habit-heatmap__legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-group-label-size);
+}
+
+.habit-heatmap__legend .habit-heatmap__cell {
+  width: 12px;
+  height: 12px;
+}
+
+.habit-heatmap__legend span:first-child {
+  margin-right: var(--space-1);
+}
+
+.habit-heatmap__legend span:last-child {
+  margin-left: var(--space-1);
+}
+
+/* Недельные бары */
+
+.habit-bars {
+  display: block;
+  overflow: visible;
+}
+
+.habit-bars__track {
+  fill: var(--color-surface-sunken);
+}
+
+.habit-bars__fill {
+  fill: var(--color-accent);
+}
+
+.habit-bars__fill--low {
+  fill: var(--color-danger);
+}
+
+.habit-bars__fill--mid {
+  fill: color-mix(in srgb, var(--color-accent) 68%, var(--color-text-muted));
+}
+
+.habit-bars__fill--high {
+  fill: var(--color-accent);
+}
+
+.habit-bars__label {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.habit-bars__value {
+  fill: var(--color-text-secondary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sparkline */
+
+.habit-sparkline {
+  flex: none;
+  --spark-color: var(--color-text-secondary);
+}
+
+.habit-sparkline--low {
+  --spark-color: var(--color-danger);
+}
+
+.habit-sparkline--mid {
+  --spark-color: color-mix(in srgb, var(--color-accent) 68%, var(--color-text-muted));
+}
+
+.habit-sparkline--high {
+  --spark-color: var(--color-accent);
+}
+
+.habit-sparkline__line {
+  fill: none;
+  stroke: var(--spark-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.habit-sparkline__dot {
+  fill: var(--spark-color);
+  stroke: var(--color-surface-raised);
+  stroke-width: 2;
+}
+
+.habit-sparkline--empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-meta-size);
+}
+
+/* Прогресс */
+
+.habit-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.habit-progress__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-2);
+}
+
+.habit-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-raised);
+}
+
+.habit-stat__label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+}
+
+.habit-stat__value {
+  font-size: var(--font-body-lg-size);
+  font-weight: var(--font-weight-display);
+  line-height: 1.2;
+}
+
+.habit-progress__charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.habit-progress__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.habit-progress__title {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+}
+
+/* Форма привычки */
+
+.habit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.habit-form__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.habit-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-field-size);
+  color: var(--color-text-secondary);
+}
+
+.habit-form input[type='text'],
+.habit-form input:not([type]),
+.habit-form textarea {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  background: var(--color-surface-input);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-field-size);
+  transition: border-color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-form input:focus-visible,
+.habit-form textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.habit-form__hint {
+  margin: calc(var(--space-1) * -1) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-meta-size);
+}
+
+.habit-form__checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.habit-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+@media (max-width: 900px) {
+  .habit-progress__charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .habits-page {
+    padding: var(--space-6) var(--space-4) var(--space-10);
+  }
+
+  .habits-title {
+    font-size: var(--font-body-lg-size);
+  }
+
+  .habit-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .habit-chain__item {
+    grid-template-columns: 24px minmax(0, 1fr) var(--control-height-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .habit-chain__item,
+  .habit-chain__toggle,
+  .habit-card,
+  .habit-week__day {
+    transition: none;
+  }
+}

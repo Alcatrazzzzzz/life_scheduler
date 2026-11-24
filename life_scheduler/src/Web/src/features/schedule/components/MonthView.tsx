@@ -1,4 +1,5 @@
 import { Repeat } from 'lucide-react'
+import { StreakBadge } from '../../../components/ui/StreakBadge'
 import type { ScheduleEntry } from '../api'
 import {
   WEEKDAY_LABELS,
@@ -73,6 +74,9 @@ export function MonthView({ anchor, days, entries, now, onCreateAt, onEntryClick
                       )}
                       <span className="month-chip__title">{entry.title}</span>
                       <EntryMark result={entry.result} past={past} />
+                      {entry.kind === 'habit' && entry.streak ? (
+                        <StreakBadge value={entry.streak} />
+                      ) : null}
                       {entry.recurrence !== 'none' && (
                         <Repeat
                           className="entry-repeat month-chip__repeat"

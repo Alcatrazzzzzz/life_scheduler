@@ -1,6 +1,7 @@
 using LifeScheduler.Api.Shared.Data;
 using LifeScheduler.Api.Shared.Schedule;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 namespace LifeScheduler.Api.Features.Schedule;
 
@@ -11,7 +12,9 @@ public sealed record CreateScheduleRequest(
     TimeOnly? End,
     string? Notes,
     ScheduleRecurrence Recurrence = ScheduleRecurrence.None,
-    ScheduleKind Kind = ScheduleKind.Event);
+    ScheduleKind Kind = ScheduleKind.Event,
+    string? Reward = null,
+    Guid? StackAfterId = null);
 
 public static class CreateSchedule
 {
@@ -25,7 +28,9 @@ public static class CreateSchedule
         DateTimeOffset CreatedAt,
         ScheduleRecurrence Recurrence,
         ScheduleKind Kind,
-        int AttachmentCount);
+        int AttachmentCount,
+        string? Reward,
+        Guid? StackAfterId);
 
     public static async Task<Results<Created<Response>, ValidationProblem>> Handle(
         CreateScheduleRequest request,
@@ -35,6 +40,9 @@ public static class CreateSchedule
     {
         var errors = ScheduleTypeRules.Validate(request.Kind, request.Recurrence);
 
+        foreach (var (field, messages) in HabitRules.ValidateReward(request.Kind, request.Reward))
+            errors[field] = messages;
+
         if (string.IsNullOrWhiteSpace(request.Title))
             errors[nameof(request.Title)] = ["Title обязателен."];
 
@@ -42,6 +50,11 @@ public static class CreateSchedule
             errors[nameof(request.End)] = ["Укажите и Start, и End — либо оставьте оба пустыми."];
         else if (request.Start is { } start && request.End is { } end && end <= start)
             errors[nameof(request.End)] = ["End должен быть позже Start."];
+
+        var stackTarget = request.StackAfterId is { } stackId
+            ? await db.Schedules.AsNoTracking().FirstOrDefaultAsync(e => e.Id == stackId, ct)
+            : null;
+        HabitRules.ValidateStackTarget(request.Kind, request.StackAfterId, stackTarget, errors);
 
         if (errors.Count > 0)
             return TypedResults.ValidationProblem(errors);
@@ -60,6 +73,8 @@ public static class CreateSchedule
             Start = request.Start,
             End = request.End,
             Notes = request.Notes,
+            Reward = HabitRules.NormalizeReward(request.Reward),
+            StackAfterId = HabitRules.NormalizeStackAfterId(request.Kind, request.StackAfterId),
             Recurrence = request.Recurrence,
             Status = isPast ? ScheduleStatus.Archived : ScheduleStatus.Active,
             ArchivedAt = isPast ? time.GetUtcNow() : null,
@@ -79,7 +94,9 @@ public static class CreateSchedule
             entry.CreatedAt,
             entry.Recurrence,
             entry.Kind,
-            AttachmentCount: 0);
+            AttachmentCount: 0,
+            entry.Reward,
+            entry.StackAfterId);
 
         return TypedResults.Created($"/api/schedules/{entry.Id}", response);
     }

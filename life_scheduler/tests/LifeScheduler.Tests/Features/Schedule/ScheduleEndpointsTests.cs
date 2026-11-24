@@ -8,6 +8,7 @@ using LifeScheduler.Api.Shared.Data;
 using LifeScheduler.Api.Shared.Schedule;
 using LifeScheduler.Tests.Support;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LifeScheduler.Tests.Features.Schedule;
 
@@ -485,6 +486,242 @@ public sealed class ScheduleEndpointsTests
         Assert.Equal(ScheduleResult.None, response.Single(item => item.Title == "Прошедшая встреча").Result);
         Assert.Equal(ScheduleResult.Missed, response.Single(item => item.Title == "Пропущенная задача").Result);
         Assert.Equal(ScheduleResult.Completed, response.Single(item => item.Title == "Выполненная задача").Result);
+    }
+
+    [Fact]
+    public async Task DeleteHabit_ClearsStackReferenceOfDependent()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var trigger = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+        var dependent = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Душ", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit,
+            stackAfterId: trigger);
+
+        var response = await client.DeleteAsync($"/api/schedules/{trigger}");
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+
+        Assert.Null(db.Schedules.Single(e => e.Id == dependent).StackAfterId);
+    }
+
+    [Fact]
+    public async Task CreateHabit_WithRewardAndStack_ReturnsFieldsAndTriggerTitle()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var first = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+        var second = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Душ", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit,
+            reward: "Кофе", stackAfterId: first);
+
+        var detail = await client.GetFromJsonAsync<GetSchedule.Response>(
+            $"/api/schedules/{second}", JsonOptions);
+
+        Assert.NotNull(detail);
+        Assert.Equal("Кофе", detail.Reward);
+        Assert.Equal(first, detail.StackAfterId);
+        Assert.Equal("Зарядка", detail.StackAfterTitle);
+    }
+
+    [Fact]
+    public async Task CreateHabit_WithNonHabitTrigger_ReturnsValidationProblem()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var taskId = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Задача", today, kind: ScheduleKind.Task);
+
+        var request = new CreateScheduleRequest(
+            "Душ", today, null, null, null,
+            ScheduleRecurrence.Daily, ScheduleKind.Habit,
+            StackAfterId: taskId);
+
+        var response = await client.PostAsJsonAsync("/api/schedules", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateTask_WithReward_ReturnsValidationProblem()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var request = new CreateScheduleRequest(
+            "Задача", new DateOnly(2026, 11, 20), null, null, null,
+            Kind: ScheduleKind.Task, Reward: "Кофе");
+
+        var response = await client.PostAsJsonAsync("/api/schedules", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateHabit_ToTriggerOfItsDependent_ReturnsValidationProblem()
+    {
+        using var factory = new ScheduleApiFactory();
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var first = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+        var second = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Душ", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit,
+            stackAfterId: first);
+
+        var request = new UpdateScheduleRequest(
+            "Зарядка", today, null, null, null,
+            ScheduleRecurrence.Daily, ScheduleKind.Habit, StackAfterId: second);
+
+        var response = await client.PutAsJsonAsync($"/api/schedules/{first}", request);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateHabit_ToTask_ClearsPlanAndCompletionMarks()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var trigger = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Душ", today,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit,
+            reward: "Кофе", stackAfterId: trigger);
+
+        var complete = await client.PostAsJsonAsync(
+            $"/api/schedules/{id}/completion", new CompleteScheduleRequest(today));
+        Assert.Equal(HttpStatusCode.NoContent, complete.StatusCode);
+
+        var request = new UpdateScheduleRequest(
+            "Душ", today, null, null, null,
+            ScheduleRecurrence.None, ScheduleKind.Task);
+
+        var response = await client.PutAsJsonAsync($"/api/schedules/{id}", request);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+        var entry = db.Schedules.Single(e => e.Id == id);
+
+        Assert.Null(entry.Reward);
+        Assert.Null(entry.StackAfterId);
+        Assert.Empty(db.OccurrenceCompletions.Where(c => c.ScheduleEntryId == id).ToList());
+    }
+
+    [Fact]
+    public async Task UpdateHabit_ChangeRecurrence_RemovesNonOccurrenceMarks()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var seed = new DateOnly(2026, 11, 2);
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", seed,
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+
+        var complete = await client.PostAsJsonAsync(
+            $"/api/schedules/{id}/completion", new CompleteScheduleRequest(new DateOnly(2026, 11, 3)));
+        Assert.Equal(HttpStatusCode.NoContent, complete.StatusCode);
+
+        var request = new UpdateScheduleRequest(
+            "Зарядка", seed, null, null, null,
+            ScheduleRecurrence.Weekly, ScheduleKind.Habit);
+
+        var response = await client.PutAsJsonAsync($"/api/schedules/{id}", request);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+
+        Assert.Empty(db.OccurrenceCompletions.Where(c => c.ScheduleEntryId == id).ToList());
+    }
+
+    [Fact]
+    public async Task ListSchedule_StreakOnlyOnTodaysOccurrence()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 20, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+        var today = new DateOnly(2026, 11, 20);
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", new DateOnly(2026, 11, 18),
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+
+        foreach (var date in new[]
+                 {
+                     new DateOnly(2026, 11, 18),
+                     new DateOnly(2026, 11, 19),
+                     today,
+                 })
+        {
+            var complete = await client.PostAsJsonAsync(
+                $"/api/schedules/{id}/completion", new CompleteScheduleRequest(date));
+            Assert.Equal(HttpStatusCode.NoContent, complete.StatusCode);
+        }
+
+        var rows = await client.GetFromJsonAsync<List<ListSchedule.Response>>(
+            "/api/schedules?from=2026-11-18&to=2026-11-20", JsonOptions);
+
+        Assert.NotNull(rows);
+        Assert.Equal(3, rows.Single(row => row.Date == today).Streak);
+        Assert.Null(rows.Single(row => row.Date == new DateOnly(2026, 11, 18)).Streak);
+        Assert.Null(rows.Single(row => row.Date == new DateOnly(2026, 11, 19)).Streak);
+    }
+
+    [Fact]
+    public async Task GetSchedule_WithDate_ReturnsWeekAroundThatDate()
+    {
+        using var factory = new ScheduleApiFactory(
+            new DateTimeOffset(2026, 11, 24, 12, 0, 0, TimeSpan.Zero));
+        factory.InitializeDatabase();
+        var client = factory.CreateClient();
+
+        var id = await ScheduleTestHelpers.CreateEntryAsync(
+            client, "Зарядка", new DateOnly(2026, 11, 1),
+            recurrence: ScheduleRecurrence.Daily, kind: ScheduleKind.Habit);
+
+        var detail = await client.GetFromJsonAsync<GetSchedule.Response>(
+            $"/api/schedules/{id}?date=2026-11-18", JsonOptions);
+
+        Assert.NotNull(detail);
+        Assert.NotNull(detail.HabitDays);
+        Assert.Equal(7, detail.HabitDays.Count);
+        Assert.Equal(new DateOnly(2026, 11, 16), detail.HabitDays[0].Date);
+        Assert.Equal(new DateOnly(2026, 11, 22), detail.HabitDays[^1].Date);
     }
 
     private static async Task<Guid> CreateEntryAsync(HttpClient client)

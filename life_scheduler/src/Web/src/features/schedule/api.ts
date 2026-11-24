@@ -1,3 +1,5 @@
+import { toApiError } from '../../lib/apiError'
+
 export type ScheduleRecurrence = 'none' | 'daily' | 'weekly'
 export type ScheduleKind = 'event' | 'task' | 'habit'
 export type ScheduleResult = 'none' | 'completed' | 'missed'
@@ -23,10 +25,29 @@ export interface ScheduleEntry {
   attachmentCount: number
   // Приходит только в истории: итог выполнения задачи или дня привычки.
   result?: ScheduleResult
+  // Текущая серия привычки; приходит только на сегодняшнем вхождении.
+  streak?: number | null
+}
+
+export interface HabitDay {
+  date: string
+  scheduled: boolean
+  completed: boolean
 }
 
 export interface ScheduleDetail extends ScheduleEntry {
+  today: string
   completedAt: string | null
+  reward: string | null
+  stackAfterId: string | null
+  stackAfterTitle: string | null
+  currentStreak: number | null
+  longestStreak: number | null
+  missedTwice: boolean
+  lastOccurrenceMissed: boolean
+  lastMissedDate: string | null
+  completionRate: number | null
+  habitDays: HabitDay[] | null
   attachments: ScheduleAttachment[]
 }
 
@@ -60,6 +81,8 @@ export interface CreateScheduleInput {
   notes?: string
   recurrence: ScheduleRecurrence
   kind: ScheduleKind
+  reward?: string | null
+  stackAfterId?: string | null
 }
 
 export interface UpdateScheduleInput {
@@ -70,44 +93,8 @@ export interface UpdateScheduleInput {
   notes?: string
   recurrence: ScheduleRecurrence
   kind: ScheduleKind
-}
-
-async function toApiError(res: Response): Promise<Error> {
-  try {
-    const payload: unknown = await res.json()
-    const messages = collectProblemMessages(payload)
-    if (messages.length > 0) {
-      return new Error(messages.join(' '))
-    }
-  } catch {
-    // тело не JSON — остаётся только статус
-  }
-
-  return new Error(`Запрос не выполнен: HTTP ${res.status}`)
-}
-
-function collectProblemMessages(payload: unknown): string[] {
-  if (typeof payload !== 'object' || payload === null) {
-    return []
-  }
-
-  const problem = payload as { title?: unknown; errors?: unknown }
-  const errors = problem.errors
-  const details: string[] = []
-
-  if (typeof errors === 'object' && errors !== null) {
-    // TODO: фильтровать errors по известным ключам, не Object.values — иначе служебные поля ProblemDetails попадут в сообщения
-    for (const value of Object.values(errors)) {
-      if (!Array.isArray(value)) continue
-
-      for (const item of value) {
-        if (typeof item === 'string') details.push(item)
-      }
-    }
-  }
-
-  if (details.length > 0) return details
-  return typeof problem.title === 'string' ? [problem.title] : []
+  reward?: string | null
+  stackAfterId?: string | null
 }
 
 export async function listSchedules(from?: string, to?: string): Promise<ScheduleEntry[]> {
@@ -122,8 +109,9 @@ export async function listSchedules(from?: string, to?: string): Promise<Schedul
   return (await res.json()) as ScheduleEntry[]
 }
 
-export async function getSchedule(id: string): Promise<ScheduleDetail> {
-  const res = await fetch(`/api/schedules/${id}`)
+export async function getSchedule(id: string, date?: string): Promise<ScheduleDetail> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : ''
+  const res = await fetch(`/api/schedules/${id}${query}`)
   if (!res.ok) throw await toApiError(res)
 
   return (await res.json()) as ScheduleDetail

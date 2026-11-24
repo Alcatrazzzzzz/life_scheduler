@@ -103,6 +103,13 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("None");
 
+                    b.Property<string>("Reward")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("StackAfterId")
+                        .HasColumnType("TEXT");
+
                     b.Property<TimeOnly?>("Start")
                         .HasColumnType("TEXT");
 
@@ -121,6 +128,8 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Date");
+
+                    b.HasIndex("StackAfterId");
 
                     b.ToTable("Schedules");
                 });
@@ -155,6 +164,14 @@ namespace LifeScheduler.Api.Shared.Data.Migrations
                         .HasForeignKey("ScheduleEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleEntry", b =>
+                {
+                    b.HasOne("LifeScheduler.Api.Shared.Data.ScheduleEntry", null)
+                        .WithMany()
+                        .HasForeignKey("StackAfterId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("LifeScheduler.Api.Shared.Data.ScheduleOccurrenceCompletion", b =>

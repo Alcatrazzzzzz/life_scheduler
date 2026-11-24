@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
-import { Download, FileImage, FileText, Paperclip, Repeat, Trash2 } from 'lucide-react'
+import { Download, FileImage, FileText, Flame, Paperclip, Pencil, Repeat, Trash2 } from 'lucide-react'
 import { attachmentDownloadUrl } from '../api'
-import type { ScheduleEntry, ScheduleKind, ScheduleRecurrence } from '../api'
+import type { HabitDay, ScheduleEntry, ScheduleKind, ScheduleRecurrence } from '../api'
 import { attachmentPreviewKind } from '../attachmentPreview'
 import { MAX_FILE_BYTES, MAX_FILES, MAX_TOTAL_BYTES } from '../attachmentLimits'
 import { formatFullDate, formatTimeRange, parseDateString } from '../calendar'
@@ -15,7 +15,8 @@ import {
   useUncompleteSchedule,
 } from '../queries'
 import { AttachmentPreviewDialog } from './AttachmentPreviewDialog'
-import { Modal } from './Modal'
+import { EditScheduleDialog } from './EditScheduleDialog'
+import { Modal } from '../../../components/ui/Modal'
 
 const RECURRENCE_LABELS: Record<ScheduleRecurrence, string> = {
   none: 'Не повторять',
@@ -29,6 +30,13 @@ const KIND_LABELS: Record<ScheduleKind, string> = {
   habit: 'Привычка',
 }
 
+const WEEKDAY_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб']
+
+function weekdayLabel(date: string): string {
+  const [year, month, day] = date.split('-').map(Number)
+  return WEEKDAY_SHORT[new Date(year, month - 1, day).getDay()]
+}
+
 interface ScheduleDetailsDialogProps {
   entry: ScheduleEntry
   onClose: () => void
@@ -36,7 +44,7 @@ interface ScheduleDetailsDialogProps {
 
 export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogProps) {
   const removeSchedule = useDeleteSchedule()
-  const detail = useSchedule(entry.id, !removeSchedule.isPending)
+  const detail = useSchedule(entry.id, entry.date, !removeSchedule.isPending)
   const addAttachment = useAddAttachment(entry.id)
   const removeAttachment = useDeleteAttachment(entry.id)
   const completeSchedule = useCompleteSchedule()
@@ -44,6 +52,14 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [previewAttachmentId, setPreviewAttachmentId] = useState<string | null>(null)
   const [completed, setCompleted] = useState(entry.result === 'completed')
+  const [editing, setEditing] = useState(false)
+
+  const habit = detail.data && detail.data.kind === 'habit' ? detail.data : null
+  const todayDay = habit?.habitDays?.find((day) => day.date === habit.today) ?? null
+  const habitAtRisk =
+    habit !== null &&
+    (habit.missedTwice ||
+      (habit.lastOccurrenceMissed && todayDay?.scheduled === true && !todayDay.completed))
 
   const recurring = entry.recurrence !== 'none'
   const completable = entry.kind === 'task' || entry.kind === 'habit'
@@ -149,6 +165,65 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
           )}
   
           {entry.notes && <p className="entry-details__notes">{entry.notes}</p>}
+
+          {habit && (
+            <section className="entry-habit">
+              <div className="entry-habit__stats">
+                <span>
+                  <strong>{habit.currentStreak}</strong> текущая серия
+                </span>
+                <span>
+                  <strong>{habit.longestStreak}</strong> рекорд
+                </span>
+                {habit.completionRate !== null && (
+                  <span>
+                    <strong>{Math.round(habit.completionRate * 100)}%</strong> за 30 дней
+                  </span>
+                )}
+              </div>
+
+              {habit.stackAfterTitle && (
+                <p className="entry-habit__line">После: {habit.stackAfterTitle}</p>
+              )}
+              {habit.reward && (
+                <p className="entry-habit__line">Награда: {habit.reward}</p>
+              )}
+
+              {habitAtRisk && (
+                <p className="entry-habit__warning">
+                  {habit.missedTwice
+                    ? 'Пропущено дважды — самое время восстановить цепочку.'
+                    : 'Вчера пропущено — сегодня не пропустите.'}
+                </p>
+              )}
+
+              {habit.habitDays && (
+                <div className="entry-habit__week" aria-label="Неделя привычки">
+                  {habit.habitDays.map((day: HabitDay) => {
+                    const state = !day.scheduled
+                      ? 'off'
+                      : day.completed
+                        ? 'done'
+                        : day.date < habit.today
+                          ? 'missed'
+                          : day.date > habit.today
+                            ? 'future'
+                            : 'planned'
+
+                    return (
+                      <span
+                        key={day.date}
+                        className={`entry-habit__day entry-habit__day--${state}`}
+                        title={`${day.date}: ${day.completed ? 'выполнено' : 'нет отметки'}`}
+                      >
+                        {weekdayLabel(day.date)}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          )}
   
           <section className="attachment-section">
             <div className="attachment-section__head">
@@ -245,6 +320,15 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
               </label>
               <span className="entry-complete__hint">{completionHint}</span>
               {completionError && <p className="schedule-error">{completionError.message}</p>}
+              {completed && habit && (
+                <p className="entry-reward">
+                  <Flame size={14} strokeWidth={1.5} aria-hidden="true" />
+                  <span>
+                    Серия: {habit.currentStreak}
+                    {habit.reward ? ` · Награда: ${habit.reward}` : ''}
+                  </span>
+                </p>
+              )}
             </div>
           )}
 
@@ -258,6 +342,15 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
             </button>
             <button
               type="button"
+              className="btn btn--ghost"
+              onClick={() => setEditing(true)}
+              disabled={!detail.data}
+            >
+              <Pencil size={14} strokeWidth={1.5} aria-hidden="true" />
+              Редактировать
+            </button>
+            <button
+              type="button"
               className="btn btn--danger"
               onClick={handleDelete}
               disabled={deletingSchedule}
@@ -267,6 +360,10 @@ export function ScheduleDetailsDialog({ entry, onClose }: ScheduleDetailsDialogP
           </div>
         </div>
       </Modal>
+
+      {editing && detail.data && (
+        <EditScheduleDialog detail={detail.data} onClose={() => setEditing(false)} />
+      )}
 
       {previewAttachment && (
         <AttachmentPreviewDialog

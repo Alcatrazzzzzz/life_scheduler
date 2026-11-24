@@ -5,7 +5,7 @@ import type { ScheduleAttachment } from '../api'
 import { adjacentAttachmentId, attachmentPreviewKind } from '../attachmentPreview'
 import { formatFileSize } from '../format'
 import { useAttachmentBlob } from '../queries'
-import { Modal } from './Modal'
+import { Modal } from '../../../components/ui/Modal'
 
 interface AttachmentPreviewDialogProps {
   scheduleId: string

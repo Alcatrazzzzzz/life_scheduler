@@ -10,6 +10,7 @@ public sealed class ScheduleEntryConfiguration : IEntityTypeConfiguration<Schedu
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Title).IsRequired().HasMaxLength(200);
         builder.Property(e => e.Notes).HasMaxLength(2000);
+        builder.Property(e => e.Reward).HasMaxLength(200);
         builder
             .Property(e => e.Recurrence)
             .HasConversion<string>()
@@ -26,5 +27,11 @@ public sealed class ScheduleEntryConfiguration : IEntityTypeConfiguration<Schedu
             .HasMaxLength(16)
             .HasDefaultValue(ScheduleKind.Event);
         builder.HasIndex(e => e.Date);
+        builder.HasIndex(e => e.StackAfterId);
+        builder
+            .HasOne<ScheduleEntry>()
+            .WithMany()
+            .HasForeignKey(e => e.StackAfterId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

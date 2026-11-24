@@ -413,6 +413,53 @@
   color: var(--color-text-secondary);
 }
 
+.habit-extras {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  border: none;
+  border-top: var(--border-width) solid var(--color-border-neutral);
+}
+
+.habit-extras legend {
+  padding: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+}
+
+.habit-extras label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-field-size);
+  color: var(--color-text-secondary);
+}
+
+.habit-extras input:not([type]) {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  background: var(--color-surface-input);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-field-size);
+  transition: border-color var(--duration-hover) var(--ease-standard);
+}
+
+.habit-extras input:not([type]):focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.habit-extras__hint {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-meta-size);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .popover {
     animation: none;

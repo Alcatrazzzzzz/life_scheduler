@@ -18,12 +18,14 @@ public static class ListSchedule
         ScheduleRecurrence Recurrence,
         ScheduleKind Kind,
         ScheduleResult Result,
-        int AttachmentCount);
+        int AttachmentCount,
+        int? Streak);
 
     public static async Task<Ok<IReadOnlyList<Response>>> Handle(
         DateOnly? from,
         DateOnly? to,
         LifeSchedulerDbContext db,
+        TimeProvider time,
         CancellationToken ct)
     {
         var query = db.Schedules.AsNoTracking()
@@ -51,7 +53,8 @@ public static class ListSchedule
                 e.Kind,
                 ScheduleResult.None,
                 db.Set<ScheduleAttachment>()
-                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
+                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready),
+                null))
             .ToListAsync(ct);
 
         if (from is null || to is null)
@@ -61,6 +64,17 @@ public static class ListSchedule
         }
 
         var completedByHabit = await LoadCompletedOccurrencesAsync(db, rows, ct);
+        var today = DateOnly.FromDateTime(time.GetLocalNow().DateTime);
+        var currentStreaks = new Dictionary<Guid, int>();
+
+        foreach (var habit in rows.Where(row => row.Kind == ScheduleKind.Habit))
+        {
+            var completed = completedByHabit.TryGetValue(habit.Id, out var dates)
+                ? dates
+                : [];
+            currentStreaks[habit.Id] =
+                HabitStatistics.Streaks(habit.Date, habit.Recurrence, completed, today).Current;
+        }
 
         var activeItems = rows
             .SelectMany(row => OccurrenceRules.Dates(row.Date, row.Recurrence, from.Value, to.Value)
@@ -68,9 +82,14 @@ public static class ListSchedule
                 {
                     Date = date,
                     Result = row.Kind == ScheduleKind.Habit
-                             && completedByHabit.Contains((row.Id, date))
+                             && IsCompleted(completedByHabit, row.Id, date)
                         ? ScheduleResult.Completed
                         : ScheduleResult.None,
+                    Streak = row.Kind == ScheduleKind.Habit
+                             && date == today
+                             && currentStreaks.TryGetValue(row.Id, out var streak)
+                        ? streak
+                        : null,
                 }));
 
         var archived = await db.Schedules
@@ -92,13 +111,14 @@ public static class ListSchedule
                     ? e.CompletedAt != null ? ScheduleResult.Completed : ScheduleResult.Missed
                     : ScheduleResult.None,
                 db.Set<ScheduleAttachment>()
-                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready)))
+                    .Count(a => a.ScheduleEntryId == e.Id && a.Status == AttachmentStatus.Ready),
+                null))
             .ToListAsync(ct);
 
         return TypedResults.Ok<IReadOnlyList<Response>>(Order(activeItems.Concat(archived)));
     }
 
-    private static async Task<HashSet<(Guid Id, DateOnly Date)>> LoadCompletedOccurrencesAsync(
+    private static async Task<Dictionary<Guid, HashSet<DateOnly>>> LoadCompletedOccurrencesAsync(
         LifeSchedulerDbContext db,
         IReadOnlyList<Response> rows,
         CancellationToken ct)
@@ -118,8 +138,16 @@ public static class ListSchedule
             .Select(c => new { c.ScheduleEntryId, c.Date })
             .ToListAsync(ct);
 
-        return completed.Select(c => (c.ScheduleEntryId, c.Date)).ToHashSet();
+        return completed
+            .GroupBy(c => c.ScheduleEntryId)
+            .ToDictionary(group => group.Key, group => group.Select(c => c.Date).ToHashSet());
     }
+
+    private static bool IsCompleted(
+        Dictionary<Guid, HashSet<DateOnly>> completed,
+        Guid habitId,
+        DateOnly date) =>
+        completed.TryGetValue(habitId, out var dates) && dates.Contains(date);
 
     private static List<Response> Order(IEnumerable<Response> items) =>
         items.OrderBy(e => e.Date)

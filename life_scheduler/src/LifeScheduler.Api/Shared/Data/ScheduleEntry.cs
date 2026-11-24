@@ -33,6 +33,10 @@ public sealed class ScheduleEntry
     public TimeOnly? Start { get; set; }
     public TimeOnly? End { get; set; }
     public string? Notes { get; set; }
+    // Необязательная награда привычки: показывается после отметки дня.
+    public string? Reward { get; set; }
+    // Привычка-триггер: «после неё я делаю эту». Только для Habit.
+    public Guid? StackAfterId { get; set; }
     public ScheduleRecurrence Recurrence { get; set; }
     // Archived — прошедшая неповторяющаяся запись, переведённая в историю архиватором
     public ScheduleStatus Status { get; set; }
