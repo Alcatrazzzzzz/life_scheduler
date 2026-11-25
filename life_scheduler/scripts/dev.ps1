@@ -1,10 +1,49 @@
-# Запускает API (dotnet watch) и фронтенд (vite) одновременно. Ctrl+C останавливает оба
+﻿# Запускает API (dotnet watch) и фронтенд (vite) одновременно. Ctrl+C останавливает оба
 # и закрывает окно браузера, открытое скриптом.
+# При первом старте API загружает Whisper и Phi-4-mini ONNX (10–40 с).
+# Для работы над UI без моделей используйте -NoLocalAi.
+param(
+  [switch] $NoLocalAi,
+  [switch] $CheckOnly,
+  [switch] $NoBrowser
+)
+
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
 if (-not $dotnet) { $dotnet = 'C:\Program Files\dotnet\dotnet.exe' }
+
+$modelsRoot = Join-Path $root 'src\LifeScheduler.Api\models'
+$whisperModel = Join-Path $modelsRoot 'ggml-medium.bin'
+$onnxModelDir = Join-Path $modelsRoot 'phi-4-mini-onnx-cpu-int4'
+$onnxConfig = Join-Path $onnxModelDir 'genai_config.json'
+$onnxData = Join-Path $onnxModelDir 'model.onnx.data'
+
+if ($NoLocalAi) {
+  $env:LocalAi__Enabled = 'false'
+  Write-Host 'Локальный AI отключён (-NoLocalAi): модели не загружаются.' -ForegroundColor Yellow
+} else {
+  $missingModels = @(
+    @($whisperModel, $onnxConfig, $onnxData) | Where-Object { -not (Test-Path -LiteralPath $_) }
+  )
+
+  if ($missingModels.Count -gt 0) {
+    Write-Host 'Не найдены модели локального AI:' -ForegroundColor Red
+    foreach ($model in $missingModels) {
+      Write-Host "  $model" -ForegroundColor Red
+    }
+    Write-Host 'Скачайте модели по инструкции из README.md или запустите .\scripts\dev.ps1 -NoLocalAi.' -ForegroundColor Yellow
+    exit 1
+  }
+
+  $env:LocalAi__Enabled = 'true'
+}
+
+if ($CheckOnly) {
+  Write-Host 'Конфигурация запуска проверена.' -ForegroundColor Green
+  exit 0
+}
 
 # Windows не переписывает ParentProcessId после смерти родителя, поэтому обход находит
 # и осиротевшие процессы: dotnet watch успевает выйти по Ctrl+C раньше, чем сработает cleanup,
@@ -61,9 +100,11 @@ function Get-TargetScreen {
 
 # Ждём, пока порт начнёт принимать соединения: так следующий шаг стартует только тогда,
 # когда предыдущий процесс уже готов отвечать.
-function Wait-ForPort([int] $Port, [int] $TimeoutSeconds) {
+function Wait-ForPort([int] $Port, [int] $TimeoutSeconds, $Process = $null) {
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
   while ((Get-Date) -lt $deadline) {
+    if ($null -ne $Process -and $Process.HasExited) { return $false }
+
     $probe = [System.Net.Sockets.TcpClient]::new()
     try {
       $probe.Connect('localhost', $Port)
@@ -144,6 +185,7 @@ function Expand-BrowserWindow([int[]] $ProcessIds) {
 Write-Host 'API: http://localhost:5148' -ForegroundColor Cyan
 Write-Host 'Web: http://localhost:5173' -ForegroundColor Cyan
 
+# dotnet watch перезапускает API и заново грузит модели на каждое изменение C# (10–40 с).
 $api = Start-Process $dotnet `
   -ArgumentList 'watch', '--project', "$root\src\LifeScheduler.Api", 'run', '--launch-profile', 'http' `
   -NoNewWindow -PassThru
@@ -155,8 +197,12 @@ $browserProfile = Join-Path $env:TEMP 'life-scheduler-dev-browser'
 try {
   # Фронтенд стартует только после того, как API начнёт принимать соединения: иначе Vite
   # отдаёт страницу раньше бэкенда, первые запросы к /api падают, и ошибка висит до перезагрузки.
-  if (-not (Wait-ForPort 5148 120)) {
-    Write-Host 'API did not answer in 120s - frontend not started.' -ForegroundColor Yellow
+  if (-not (Wait-ForPort 5148 180 $api)) {
+    if ($api.HasExited) {
+      Write-Host "API завершился с кодом $($api.ExitCode). Смотрите сообщение выше." -ForegroundColor Red
+    } else {
+      Write-Host 'API не ответил за 180 с: модели могут ещё загружаться, проверьте консоль API.' -ForegroundColor Yellow
+    }
     return
   }
 
@@ -166,23 +212,27 @@ try {
 
   # Открываем страницу, только когда Vite начнёт принимать соединения, — иначе браузер
   # покажет ошибку «сайт недоступен» и её придётся обновлять вручную.
-  if (Wait-ForPort 5173 30) {
-    $browserPath = Find-Browser
-    if ($browserPath) {
-      $screen = Get-TargetScreen
-      $position = '{0},{1}' -f ($screen.WorkingArea.Left + 40), ($screen.WorkingArea.Top + 40)
-
-      $browser = Start-Process $browserPath `
-        -ArgumentList '--app=http://localhost:5173', ('--user-data-dir="{0}"' -f $browserProfile), '--no-first-run', '--no-default-browser-check', "--window-position=$position" `
-        -PassThru
-
-      Expand-BrowserWindow (Get-ProcessTree @($browser.Id))
+  if (Wait-ForPort 5173 60 $web) {
+    if ($NoBrowser) {
+      Write-Host 'Браузер не запускается (-NoBrowser). Откройте http://localhost:5173 вручную.' -ForegroundColor Cyan
     } else {
-      # Браузер по умолчанию не даёт handle для закрытия - окно останется открытым.
-      Start-Process 'http://localhost:5173'
+      $browserPath = Find-Browser
+      if ($browserPath) {
+        $screen = Get-TargetScreen
+        $position = '{0},{1}' -f ($screen.WorkingArea.Left + 40), ($screen.WorkingArea.Top + 40)
+
+        $browser = Start-Process $browserPath `
+          -ArgumentList '--app=http://localhost:5173', ('--user-data-dir="{0}"' -f $browserProfile), '--no-first-run', '--no-default-browser-check', "--window-position=$position" `
+          -PassThru
+
+        Expand-BrowserWindow (Get-ProcessTree @($browser.Id))
+      } else {
+        # Браузер по умолчанию не даёт handle для закрытия - окно останется открытым.
+        Start-Process 'http://localhost:5173'
+      }
     }
   } else {
-    Write-Host 'Vite did not answer in 30s - open http://localhost:5173 manually.' -ForegroundColor Yellow
+    Write-Host 'Vite did not answer in 60s - open http://localhost:5173 manually.' -ForegroundColor Yellow
   }
 
   Wait-Process -Id $api.Id, $web.Id -ErrorAction SilentlyContinue

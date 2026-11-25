@@ -18,6 +18,7 @@ export default defineConfig({
       url: 'http://localhost:5148/api/schedules',
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
+      env: { LocalAi__Enabled: 'false' },
     },
     {
       command: 'npm run dev',

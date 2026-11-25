@@ -61,6 +61,7 @@
   /* Обвязка страницы приложения */
   --header-height: 84px;
   --content-max: 1280px;
+  --z-fab: 10;
 
   /* Типографика */
   --font-hero-size: 72px;

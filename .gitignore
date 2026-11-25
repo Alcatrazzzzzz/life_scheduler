@@ -21,6 +21,11 @@ artifacts/
 # Локальные файлы вложений (dev-хранилище)
 life_scheduler/src/LifeScheduler.Api/App_Data/attachments/
 
+# Локальные AI-модели (не коммитим, ~6 ГБ)
+life_scheduler/src/LifeScheduler.Api/models/*.bin
+life_scheduler/src/LifeScheduler.Api/models/*.gguf
+life_scheduler/src/LifeScheduler.Api/models/phi-4-mini-onnx-cpu-int4/
+
 # Test results
 [Tt]est[Rr]esult*/
 *.trx

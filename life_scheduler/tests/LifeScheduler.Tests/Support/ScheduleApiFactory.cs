@@ -1,3 +1,4 @@
+using System.Data;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Shared.Data;
 using Microsoft.AspNetCore.Hosting;
@@ -29,9 +30,11 @@ public sealed class ScheduleApiFactory : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        _connection.Open();
+        if (_connection.State != ConnectionState.Open)
+            _connection.Open();
 
         builder.UseEnvironment("Development");
+        builder.UseSetting("LocalAi:Enabled", "false");
         builder.UseSetting("Storage:Provider", "Local");
         builder.UseSetting("Storage:Local:RootPath", StorageRoot);
 

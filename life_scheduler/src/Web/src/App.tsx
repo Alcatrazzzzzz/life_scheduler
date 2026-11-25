@@ -2,6 +2,7 @@ import { useEffect, useState, type MouseEvent } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CalendarDays } from 'lucide-react'
 import { ThemeToggle } from './components/ThemeToggle'
+import { VoiceAssistant } from './features/assistant/components/VoiceAssistant'
 import { HabitsPage } from './features/habits/HabitsPage'
 import { SchedulePage } from './features/schedule/SchedulePage'
 
@@ -63,6 +64,7 @@ function App() {
         </div>
       </header>
       {section === 'calendar' ? <SchedulePage /> : <HabitsPage />}
+      <VoiceAssistant />
     </QueryClientProvider>
   )
 }
