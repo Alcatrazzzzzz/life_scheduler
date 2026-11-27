@@ -22,7 +22,7 @@ public static class ToolDefinitions
             "title":{"type":"string","description":"Название в именительном падеже."},
             "recurrence":{"type":"string","enum":["daily","weekly"],"description":"daily — каждый день, weekly — раз в неделю."},
             "start":{"type":["string","null"],"description":"HH:MM или null."},
-            "end":{"type":["string","null"],"description":"HH:MM или null; задаётся вместе со start."},
+            "end":{"type":["string","null"],"description":"HH:MM или null."},
             "reward":{"type":["string","null"],"description":"Награда или null."},
             "stack_after_title":{"type":["string","null"],"description":"Привычка-триггер для stacking или null."}}}},
           {"name":"log_habit","description":"Отметить привычку выполненной.","parameters":{"type":"object","properties":{

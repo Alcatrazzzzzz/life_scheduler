@@ -161,6 +161,122 @@ public sealed class VoiceAssistantEndpointsTests
     }
 
     [Fact]
+    public async Task Command_ScheduleWithStartOnly_FillsEndWithinDay()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+
+        var llm = FakeLlmFunctionCaller.Returning(
+            FakeLlmFunctionCaller.ToolCall(
+                "create_schedule",
+                """{"title":"Пойти спать","date":"2026-11-20","start":"23:07","end":null,"notes":null}"""));
+
+        using var host = CreateAssistantHost(factory, "пойти спать в 23:07", llm);
+        using var client = host.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/assistant/command",
+            new { text = "пойти спать в 23:07" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+        var entry = await db.Schedules.SingleAsync(e => e.Title == "Пойти спать");
+
+        Assert.Equal(Today, entry.Date);
+        Assert.Equal(new TimeOnly(23, 7), entry.Start);
+        Assert.Equal(new TimeOnly(23, 59), entry.End);
+    }
+
+    [Fact]
+    public async Task Command_ScheduleWithEndOnly_FillsStartHourEarlier()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+
+        var llm = FakeLlmFunctionCaller.Returning(
+            FakeLlmFunctionCaller.ToolCall(
+                "create_schedule",
+                """{"title":"Встреча","date":"2026-11-20","start":null,"end":"13:00","notes":null}"""));
+
+        using var host = CreateAssistantHost(factory, "встреча до обеда", llm);
+        using var client = host.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/assistant/command",
+            new { text = "встреча до обеда" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+        var entry = await db.Schedules.SingleAsync(e => e.Title == "Встреча");
+
+        Assert.Equal(Today, entry.Date);
+        Assert.Equal(new TimeOnly(12, 0), entry.Start);
+        Assert.Equal(new TimeOnly(13, 0), entry.End);
+    }
+
+    [Fact]
+    public async Task Command_RelativeTime_OverridesModelDate()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+
+        var llm = FakeLlmFunctionCaller.Returning(
+            FakeLlmFunctionCaller.ToolCall(
+                "create_schedule",
+                """{"title":"Пойти спать","date":"2026-11-21","start":"23:07","end":null,"notes":null}"""));
+
+        using var host = CreateAssistantHost(factory, "пойти спать через час", llm);
+        using var client = host.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/assistant/command",
+            new { text = "пойти спать через час" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+        var entry = await db.Schedules.SingleAsync(e => e.Title == "Пойти спать");
+
+        Assert.Equal(Today, entry.Date);
+        Assert.Equal(new TimeOnly(13, 0), entry.Start);
+        Assert.Equal(new TimeOnly(14, 0), entry.End);
+    }
+
+    [Fact]
+    public async Task Command_NoonDeadline_OverridesModelBoundary()
+    {
+        using var factory = new ScheduleApiFactory(Now);
+        factory.InitializeDatabase();
+
+        var llm = FakeLlmFunctionCaller.Returning(
+            FakeLlmFunctionCaller.ToolCall(
+                "create_schedule",
+                """{"title":"Встреча","date":"2026-11-20","start":"13:00","end":null,"notes":null}"""));
+
+        using var host = CreateAssistantHost(factory, "встреча до обеда", llm);
+        using var client = host.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            "/api/assistant/command",
+            new { text = "встреча до обеда" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LifeSchedulerDbContext>();
+        var entry = await db.Schedules.SingleAsync(e => e.Title == "Встреча");
+
+        Assert.Equal(Today, entry.Date);
+        Assert.Equal(new TimeOnly(12, 0), entry.Start);
+        Assert.Equal(new TimeOnly(13, 0), entry.End);
+    }
+
+    [Fact]
     public async Task Command_EmptyText_ReturnsValidationProblem()
     {
         using var factory = new ScheduleApiFactory(Now);

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -90,10 +91,12 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
 
             // Системная часть одинакова в пределах дня, поэтому генерируем её один раз
             // и переиспользуем KV-кеш: на запрос остаётся префилл только хвоста с фразой.
+            // Время кладём в user-turn, а не в system: префикс системы остаётся
+            // неизменным в пределах дня, и KV-кеш не сбрасывается каждую минуту.
             var conversation = JsonSerializer.Serialize(new[]
             {
                 new { role = "system", content = systemPrompt },
-                new { role = "user", content = Sanitize(userText) },
+                new { role = "user", content = BuildUserTurn(userText, localNow) },
             });
 
             // Ровно тот блок, который chat template выдаёт для system-сообщения без tools.
@@ -340,6 +343,16 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
         return sanitized;
     }
 
+    private static string BuildUserTurn(string userText, DateTimeOffset localNow)
+    {
+        var today = DateOnly.FromDateTime(localNow.DateTime);
+        var time = TimeOnly.FromDateTime(localNow.DateTime)
+            .ToString("HH:mm", CultureInfo.InvariantCulture);
+
+        return $"Сейчас {today:yyyy-MM-dd} ({WeekdayRu(today.DayOfWeek)}), {time}. " +
+               Sanitize(userText);
+    }
+
     private static string BuildSystemPrompt(string toolsSchema, DateTimeOffset localNow)
     {
         var today = DateOnly.FromDateTime(localNow.DateTime);
@@ -356,6 +369,7 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
 
             Сейчас: {{{today:yyyy-MM-dd}}} ({{{WeekdayRu(today.DayOfWeek)}}}),
             {{{TimeZoneInfo.Local.Id}}} ({{{offsetText}}}).
+            Каждая фраза приходит с текущими датой и временем — считай относительное время от них.
             Относительные даты: сегодня={{{today:yyyy-MM-dd}}}, завтра={{{tomorrow:yyyy-MM-dd}}},
             послезавтра={{{dayAfterTomorrow:yyyy-MM-dd}}}, вчера={{{yesterday:yyyy-MM-dd}}}.
 
@@ -371,16 +385,26 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
             6. list_habits: "today" для «что на сегодня / что отметить», "all" для «какие у меня
                привычки» и остального.
             7. create_schedule — только разовое событие; повторяющееся действие — create_habit.
-            8. Не выдумывай start, end, reward и notes: если не названо — null.
+            8. Не выдумывай start, end, reward и notes: если не названо — null (кроме правил 10–12).
             9. Удаление, изменение и отметка событий не поддерживаются. Если фраза не команда
                из списка или намерение неясно —
                {"name":"unsupported","arguments":{"reason":"<кратко по-русски>"}}.
+            10. «через N минут/часов» и «через полчаса» (+30) — прибавь к текущему времени,
+                после полуночи дата следующая. Время суток: утром=09:00, днём=14:00,
+                в обед/до обеда/к обеду=13:00, в полдень=12:00, вечером=19:00,
+                ночью=23:00, в полночь=00:00.
+            11. Верни только названные границы: названо начало — start, end=null; назван
+                только конец («до обеда», «к 18:00») — end, start=null. Не считай +1 час сам.
+            12. date — день начала события. Если в фразе нет даты, бери её из «Сейчас»;
+                конец за полночь date не сдвигает.
 
             Примеры:
             «Отметь планёрку» → {"name":"log_habit","arguments":{"habit_name":"планёрку","completed_at":null}}
             «Я сделал зарядку вчера» → {"name":"log_habit","arguments":{"habit_name":"зарядку","completed_at":"{{{yesterday:yyyy-MM-dd}}}"}}
             «Создай привычку читать каждый день» → {"name":"create_habit","arguments":{"title":"Читать","recurrence":"daily","start":null,"end":null,"reward":null,"stack_after_title":null}}
             «Встреча с Аней завтра в 15:00 на час» → {"name":"create_schedule","arguments":{"title":"Встреча с Аней","date":"{{{tomorrow:yyyy-MM-dd}}}","start":"15:00","end":"16:00","notes":null}}
+            «Позвонить маме через час» (если сейчас 14:00) → {"name":"create_schedule","arguments":{"title":"Позвонить маме","date":"{{{today:yyyy-MM-dd}}}","start":"15:00","end":null,"notes":null}}
+            «Встреча до обеда» → {"name":"create_schedule","arguments":{"title":"Встреча","date":"{{{today:yyyy-MM-dd}}}","start":null,"end":"13:00","notes":null}}
             «Удали привычку зарядка» → {"name":"unsupported","arguments":{"reason":"удаление не поддерживается"}}
             """;
     }

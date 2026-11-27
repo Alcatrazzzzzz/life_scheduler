@@ -121,10 +121,29 @@ public static class ProcessCommand
         LlmToolCall? lastCall = null;
         ExecutionOutcome outcome;
 
+        // Время в «через час / полчаса / 20 минут» считаем сами: арифметика у модели
+        // ошибается на переходе через полночь. Модель отвечает за смысл, не за время.
+        DateTime? relativeStart = RelativeTime.TryResolve(
+            text, time.GetLocalNow().DateTime, out var resolved)
+            ? resolved
+            : null;
+
+        TimeOnly? timeOfDay = null;
+        var timeOfDayIsEnd = false;
+
+        if (relativeStart is null
+            && RelativeTime.TryResolveTimeOfDay(text, out var parsedTime, out var parsedIsEnd))
+        {
+            timeOfDay = parsedTime;
+            timeOfDayIsEnd = parsedIsEnd;
+        }
+
+        var hints = new TimeHints(relativeStart, timeOfDay, timeOfDayIsEnd);
+
         try
         {
             lastCall = await CallLlmAsync(llm, text, attempt: 1, logger, ct);
-            outcome = await ExecuteCallAsync(lastCall, db, time, ct);
+            outcome = await ExecuteCallAsync(lastCall, db, time, hints, ct);
         }
         catch (LlmOutputException ex)
         {
@@ -136,7 +155,7 @@ public static class ProcessCommand
             try
             {
                 lastCall = await CallLlmAsync(llm, text + CorrectiveSuffix, attempt: 2, logger, ct);
-                outcome = await ExecuteCallAsync(lastCall, db, time, ct);
+                outcome = await ExecuteCallAsync(lastCall, db, time, hints, ct);
             }
             catch (LlmOutputException ex)
             {
@@ -181,6 +200,7 @@ public static class ProcessCommand
         LlmToolCall call,
         LifeSchedulerDbContext db,
         TimeProvider time,
+        TimeHints hints,
         CancellationToken ct)
     {
         if (string.Equals(call.Name, ToolDefinitions.Unsupported, StringComparison.Ordinal))
@@ -201,7 +221,7 @@ public static class ProcessCommand
                     var args = Deserialize<CreateHabitArgs>(call.ArgumentsJson);
                     return args is null
                         ? new ExecutionOutcome.Retryable(call.RawOutput)
-                        : await CreateHabitAsync(args, db, time, ct);
+                        : await CreateHabitAsync(args, db, time, hints, ct);
                 }
 
             case ToolDefinitions.LogHabit:
@@ -225,7 +245,7 @@ public static class ProcessCommand
                     var args = Deserialize<CreateScheduleArgs>(call.ArgumentsJson);
                     return args is null
                         ? new ExecutionOutcome.Retryable(call.RawOutput)
-                        : await CreateScheduleAsync(args, db, time, ct);
+                        : await CreateScheduleAsync(args, db, time, hints, ct);
                 }
 
             default:
@@ -237,6 +257,7 @@ public static class ProcessCommand
         CreateHabitArgs args,
         LifeSchedulerDbContext db,
         TimeProvider time,
+        TimeHints hints,
         CancellationToken ct)
     {
         var title = args.Title?.Trim();
@@ -256,19 +277,29 @@ public static class ProcessCommand
             return new ExecutionOutcome.Retryable("Некорректное recurrence.");
         }
 
-        if (!TryParseTime(args.Start, out var start) || !TryParseTime(args.End, out var end))
+        var date = DateOnly.FromDateTime(time.GetLocalNow().DateTime);
+        TimeOnly? start;
+        TimeOnly? end;
+
+        if (hints.RelativeStart is { } relative)
+        {
+            date = DateOnly.FromDateTime(relative);
+            start = TimeOnly.FromDateTime(relative);
+            end = null;
+        }
+        else
+        {
+            if (!TryParseTime(args.Start, out start) || !TryParseTime(args.End, out end))
+            {
+                return new ExecutionOutcome.Retryable("Некорректное время.");
+            }
+
+            ApplyTimeOfDay(hints, ref start, ref end);
+        }
+
+        if (!TryCompleteTimeRange(ref start, ref end))
         {
             return new ExecutionOutcome.Retryable("Некорректное время.");
-        }
-
-        if ((start is null) != (end is null))
-        {
-            return new ExecutionOutcome.Retryable("start и end задаются только вместе.");
-        }
-
-        if (start is { } startValue && end is { } endValue && endValue <= startValue)
-        {
-            return new ExecutionOutcome.Retryable("end должен быть позже start.");
         }
 
         var reward = args.Reward?.Trim();
@@ -301,7 +332,6 @@ public static class ProcessCommand
             stackAfterId = lookup.HabitId;
         }
 
-        var today = DateOnly.FromDateTime(time.GetLocalNow().DateTime);
         var now = time.GetUtcNow();
 
         var entry = new ScheduleEntry
@@ -309,7 +339,7 @@ public static class ProcessCommand
             Id = Guid.NewGuid(),
             Title = title,
             Kind = ScheduleKind.Habit,
-            Date = today,
+            Date = date,
             Start = start,
             End = end,
             Notes = null,
@@ -490,6 +520,7 @@ public static class ProcessCommand
         CreateScheduleArgs args,
         LifeSchedulerDbContext db,
         TimeProvider time,
+        TimeHints hints,
         CancellationToken ct)
     {
         var title = args.Title?.Trim();
@@ -509,19 +540,28 @@ public static class ProcessCommand
             return new ExecutionOutcome.Retryable("Некорректная дата.");
         }
 
-        if (!TryParseTime(args.Start, out var start) || !TryParseTime(args.End, out var end))
+        TimeOnly? start;
+        TimeOnly? end;
+
+        if (hints.RelativeStart is { } relative)
+        {
+            date = DateOnly.FromDateTime(relative);
+            start = TimeOnly.FromDateTime(relative);
+            end = null;
+        }
+        else
+        {
+            if (!TryParseTime(args.Start, out start) || !TryParseTime(args.End, out end))
+            {
+                return new ExecutionOutcome.Retryable("Некорректное время.");
+            }
+
+            ApplyTimeOfDay(hints, ref start, ref end);
+        }
+
+        if (!TryCompleteTimeRange(ref start, ref end))
         {
             return new ExecutionOutcome.Retryable("Некорректное время.");
-        }
-
-        if ((start is null) != (end is null))
-        {
-            return new ExecutionOutcome.Retryable("start и end задаются только вместе.");
-        }
-
-        if (start is { } startValue && end is { } endValue && endValue <= startValue)
-        {
-            return new ExecutionOutcome.Retryable("end должен быть позже start.");
         }
 
         var notes = args.Notes?.Trim();
@@ -759,6 +799,48 @@ public static class ProcessCommand
         return false;
     }
 
+    private static readonly TimeOnly LastMinuteOfDay = new(23, 59);
+
+    private static void ApplyTimeOfDay(TimeHints hints, ref TimeOnly? start, ref TimeOnly? end)
+    {
+        if (hints.TimeOfDay is not { } timeOfDay)
+        {
+            return;
+        }
+
+        start = hints.TimeOfDayIsEnd ? null : timeOfDay;
+        end = hints.TimeOfDayIsEnd ? timeOfDay : null;
+    }
+
+    private static bool TryCompleteTimeRange(ref TimeOnly? start, ref TimeOnly? end)
+    {
+        if (start is null && end is null)
+        {
+            return true;
+        }
+
+        if (start is { } startValue && end is null)
+        {
+            var endTicks = Math.Min(
+                startValue.Ticks + TimeSpan.TicksPerHour,
+                LastMinuteOfDay.Ticks);
+            end = new TimeOnly(endTicks);
+
+            return end.Value > startValue;
+        }
+
+        if (start is null && end is { } endValue)
+        {
+            start = endValue < TimeOnly.FromTimeSpan(TimeSpan.FromHours(1))
+                ? TimeOnly.MinValue
+                : endValue.AddHours(-1);
+
+            return endValue > start.Value;
+        }
+
+        return start is { } s && end is { } e && e > s;
+    }
+
     private static bool TryParseDate(string? value, out DateOnly date) =>
         DateOnly.TryParseExact(
             value?.Trim(),
@@ -918,6 +1000,11 @@ public static class ProcessCommand
         [JsonPropertyName("notes")]
         public string? Notes { get; init; }
     }
+
+    private readonly record struct TimeHints(
+        DateTime? RelativeStart,
+        TimeOnly? TimeOfDay,
+        bool TimeOfDayIsEnd);
 
     private sealed record HabitRow(
         Guid Id,

@@ -36,6 +36,32 @@ public sealed class LocalAiIntegrationTests
         Assert.Contains("план", call.ArgumentsJson, StringComparison.OrdinalIgnoreCase);
     }
 
+    [LocalAiFact]
+    [Trait("Category", "LocalAi")]
+    public async Task Llm_RelativeTimePhrases_ReturnCreateSchedule()
+    {
+        var apiRoot = FindApiRoot();
+        var options = new LocalAiOptions();
+        var customModelPath = Environment.GetEnvironmentVariable("LOCALAI_ONNX_PATH");
+
+        if (!string.IsNullOrWhiteSpace(customModelPath))
+        {
+            options.OnnxModelPath = customModelPath;
+        }
+
+        using var caller = new OnnxLlmFunctionCaller(options, apiRoot, TimeProvider.System);
+
+        foreach (var phrase in new[] { "Пойти спать через час", "Встреча до обеда" })
+        {
+            var call = await caller.CallAsync(
+                phrase,
+                ToolDefinitions.ToolsJson,
+                CancellationToken.None);
+
+            Assert.Equal(ToolDefinitions.CreateSchedule, call.Name);
+        }
+    }
+
     private static string FindApiRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
