@@ -62,4 +62,6 @@
 <!-- claude-reflect: learned rules (saved from the band; edit freely) -->
 ## Learned rules
 - Store session data files only in docs/sessions, never in the web folder or repo root.
+- Always use relative paths instead of absolute paths in this project.
+- Always sanitize session logs in docs/sessions: strip absolute paths, usernames, temp dirs and other private/machine-specific info.
 <!-- end claude-reflect -->
