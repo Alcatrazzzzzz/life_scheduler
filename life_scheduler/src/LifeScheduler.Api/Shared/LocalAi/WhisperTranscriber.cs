@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Whisper.net;
@@ -12,6 +13,7 @@ public sealed class WhisperTranscriber : IWhisperTranscriber, IDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly string _language;
     private readonly int _threads;
+    private readonly ILogger<WhisperTranscriber>? _logger;
 
     public WhisperTranscriber(
         IOptions<LocalAiOptions> options,
@@ -31,7 +33,7 @@ public sealed class WhisperTranscriber : IWhisperTranscriber, IDisposable
         if (!File.Exists(path))
         {
             throw new InvalidOperationException(
-                $"Модель Whisper не найдена: {path}. Положите ggml-medium.bin в " +
+                $"Модель Whisper не найдена: {path}. Положите ggml-модель в " +
                 "src/LifeScheduler.Api/models/ и см. README.md.");
         }
 
@@ -50,6 +52,7 @@ public sealed class WhisperTranscriber : IWhisperTranscriber, IDisposable
 
         _language = options.WhisperLanguage;
         _threads = LocalAiOptions.ResolveThreads(options.WhisperThreads);
+        _logger = logger;
 
         logger?.LogInformation("Модель Whisper загружена: {Path}", path);
     }
@@ -60,11 +63,14 @@ public sealed class WhisperTranscriber : IWhisperTranscriber, IDisposable
         string? fileName,
         CancellationToken ct)
     {
+        var decode = Stopwatch.StartNew();
         var samples = AudioDecoder.ToPcm16kMono(audio, contentType, fileName, MaxAudioDuration);
+        decode.Stop();
 
         await _gate.WaitAsync(ct);
         try
         {
+            var infer = Stopwatch.StartNew();
             var builder = _factory.CreateBuilder()
                 .WithThreads(_threads)
                 .WithNoContext();
@@ -82,7 +88,17 @@ public sealed class WhisperTranscriber : IWhisperTranscriber, IDisposable
                 text.Append(segment.Text);
             }
 
-            return text.ToString().Trim();
+            infer.Stop();
+            var recognized = text.ToString().Trim();
+
+            _logger?.LogInformation(
+                "voice.metrics stage=whisper audio_ms={AudioMs} decode_ms={DecodeMs} infer_ms={InferMs} chars={Chars}",
+                samples.Length * 1000L / 16_000,
+                decode.ElapsedMilliseconds,
+                infer.ElapsedMilliseconds,
+                recognized.Length);
+
+            return recognized;
         }
         finally
         {

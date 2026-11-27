@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -58,11 +59,17 @@ public static class ProcessCommand
         LifeSchedulerDbContext db,
         TimeProvider time,
         IOptions<LocalAiOptions> options,
+        ILoggerFactory loggerFactory,
         CancellationToken ct)
     {
+        var logger = loggerFactory.CreateLogger("VoiceAssistant");
+        var total = Stopwatch.StartNew();
+
         try
         {
+            var inputWatch = Stopwatch.StartNew();
             var input = await ReadInputAsync(http, whisper, options.Value, ct);
+            inputWatch.Stop();
 
             if (input.Validation is not null)
             {
@@ -74,7 +81,13 @@ public static class ProcessCommand
                 return input.Problem;
             }
 
-            return await ExecuteAsync(input.Text!, llm, db, time, ct);
+            logger.LogInformation(
+                "voice.metrics stage=input input_ms={InputMs} audio={Audio} text_chars={TextChars}",
+                inputWatch.ElapsedMilliseconds,
+                http.HasFormContentType,
+                input.Text?.Length ?? 0);
+
+            return await ExecuteAsync(input.Text!, llm, db, time, logger, ct);
         }
         catch (LocalAiUnavailableException)
         {
@@ -90,6 +103,11 @@ public static class ProcessCommand
                 title: "Не удалось обработать аудио",
                 detail: ex.Message);
         }
+        finally
+        {
+            logger.LogInformation(
+                "voice.metrics stage=request total_ms={TotalMs}", total.ElapsedMilliseconds);
+        }
     }
 
     private static async Task<Results<Ok<Response>, ValidationProblem, ProblemHttpResult>> ExecuteAsync(
@@ -97,6 +115,7 @@ public static class ProcessCommand
         ILlmFunctionCaller llm,
         LifeSchedulerDbContext db,
         TimeProvider time,
+        ILogger logger,
         CancellationToken ct)
     {
         LlmToolCall? lastCall = null;
@@ -104,7 +123,7 @@ public static class ProcessCommand
 
         try
         {
-            lastCall = await llm.CallAsync(text, ToolDefinitions.ToolsJson, ct);
+            lastCall = await CallLlmAsync(llm, text, attempt: 1, logger, ct);
             outcome = await ExecuteCallAsync(lastCall, db, time, ct);
         }
         catch (LlmOutputException ex)
@@ -116,7 +135,7 @@ public static class ProcessCommand
         {
             try
             {
-                lastCall = await llm.CallAsync(text + CorrectiveSuffix, ToolDefinitions.ToolsJson, ct);
+                lastCall = await CallLlmAsync(llm, text + CorrectiveSuffix, attempt: 2, logger, ct);
                 outcome = await ExecuteCallAsync(lastCall, db, time, ct);
             }
             catch (LlmOutputException ex)
@@ -133,6 +152,29 @@ public static class ProcessCommand
             ExecutionOutcome.Retryable retryable => InvalidLlm(retryable.RawOutput),
             _ => InvalidLlm(string.Empty),
         };
+    }
+
+    private static async Task<LlmToolCall> CallLlmAsync(
+        ILlmFunctionCaller llm,
+        string text,
+        int attempt,
+        ILogger logger,
+        CancellationToken ct)
+    {
+        var watch = Stopwatch.StartNew();
+
+        try
+        {
+            return await llm.CallAsync(text, ToolDefinitions.ToolsJson, ct);
+        }
+        finally
+        {
+            watch.Stop();
+            logger.LogInformation(
+                "voice.metrics stage=llm_call attempt={Attempt} ms={Ms}",
+                attempt,
+                watch.ElapsedMilliseconds);
+        }
     }
 
     private static async Task<ExecutionOutcome> ExecuteCallAsync(

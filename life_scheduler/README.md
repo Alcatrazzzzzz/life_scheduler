@@ -4,7 +4,7 @@
 локально, включая голосового помощника: распознавание речи и разбор команд выполняются
 в процессе приложения, без облачных API, Ollama и внешних серверов.
 
-- STT: Whisper.net (whisper.cpp), модель `ggml-medium.bin`.
+- STT: Whisper.net (whisper.cpp), модель `ggml-small-q8_0.bin`.
 - NLU: ONNX Runtime GenAI + Phi-4-mini, JSON-schema constrained decoding.
   LLamaSharp/GGUF не используется.
 
@@ -14,7 +14,7 @@
 - Node.js 20+ и npm
 - Windows 10/11 x64 (голосовой ввод использует Windows Media Foundation для webm/opus)
 - 16 ГБ RAM рекомендуется; 8 ГБ может не хватить для обеих моделей
-- ~7 ГБ на диске под модели (Whisper ~1.5 ГБ + ONNX ~4.6 ГБ)
+- ~5.5 ГБ на диске под модели (Whisper ~260 МБ + ONNX ~4.6 ГБ)
 - Микрофон и браузер Chromium/Firefox для голосового ввода
 
 ## Модели
@@ -24,9 +24,9 @@
 ```bash
 mkdir -p src/LifeScheduler.Api/models
 
-# Whisper medium, ~1.5 ГБ
-curl -L -o src/LifeScheduler.Api/models/ggml-medium.bin \
-  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin
+# Whisper small (int8), ~260 МБ
+curl -L -o src/LifeScheduler.Api/models/ggml-small-q8_0.bin \
+  https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small-q8_0.bin
 
 # Phi-4-mini ONNX (CPU int4), ~4.6 ГБ
 base=https://huggingface.co/microsoft/Phi-4-mini-instruct-onnx/resolve/main/cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4
@@ -42,8 +42,8 @@ done
 не открывает пути с кириллицей (например, `C:\Users\Вадим\...`). Путь этого репозитория
 `D:\Projects\...` подходит; не переносите модель в папку с русскими буквами.
 
-Whisper можно заменить на меньшую модель (`ggml-medium-q5_0.bin` ~540 МБ или
-`ggml-small.bin` ~466 МБ), поменяв `LocalAi:WhisperModelPath`.
+Если качество распознавания на ваших командах окажется недостаточным, верните более
+крупную модель (`ggml-medium.bin` ~1.5 ГБ), поменяв `LocalAi:WhisperModelPath`.
 
 ## Запуск
 
@@ -105,7 +105,7 @@ curl -s -X POST http://localhost:5148/api/assistant/command \
 | Ключ | По умолчанию | Назначение |
 |---|---|---|
 | `Enabled` | `true` | `false` — не грузить модели (помощник вернёт 503) |
-| `WhisperModelPath` | `models/ggml-medium.bin` | путь к ggml-модели Whisper |
+| `WhisperModelPath` | `models/ggml-small-q8_0.bin` | путь к ggml-модели Whisper |
 | `OnnxModelPath` | `models/phi-4-mini-onnx-cpu-int4` | папка ONNX-модели |
 | `WhisperLanguage` | `ru` | язык распознавания |
 | `WhisperThreads` | `0` | `0` = число логических ядер |
@@ -153,8 +153,9 @@ RUN_LOCAL_AI_TESTS=1 LOCALAI_ONNX_PATH="models/phi-4-mini-onnx-cpu-int4" \
 - **422 «Не удалось декодировать аудио»** — Windows Media Foundation не смог открыть
   webm/opus. Установите «Web Media Extensions» из Microsoft Store или используйте WAV.
   На Windows N также нужен Media Feature Pack.
-- **Мало RAM / всё тормозит** — возьмите `ggml-medium-q5_0.bin` для Whisper; для NLU
-  используйте более компактную ONNX-модель (если она совместима с ONNX Runtime GenAI).
+- **Мало RAM / всё тормозит** — возьмите ещё меньшую ggml-модель Whisper (например,
+  `ggml-base-q8_0.bin`); для NLU используйте более компактную ONNX-модель (если она
+  совместима с ONNX Runtime GenAI).
 - **`dotnet watch` долго перезапускается** — на каждое изменение C# модели грузятся
   заново. Для работы над не-AI кодом поставьте `"Enabled": false` или запустите
   `scripts/dev.ps1 -NoLocalAi`.

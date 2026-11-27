@@ -15,7 +15,7 @@ $dotnet = (Get-Command dotnet -ErrorAction SilentlyContinue).Source
 if (-not $dotnet) { $dotnet = 'C:\Program Files\dotnet\dotnet.exe' }
 
 $modelsRoot = Join-Path $root 'src\LifeScheduler.Api\models'
-$whisperModel = Join-Path $modelsRoot 'ggml-medium.bin'
+$whisperModel = Join-Path $modelsRoot 'ggml-small-q8_0.bin'
 $onnxModelDir = Join-Path $modelsRoot 'phi-4-mini-onnx-cpu-int4'
 $onnxConfig = Join-Path $onnxModelDir 'genai_config.json'
 $onnxData = Join-Path $onnxModelDir 'model.onnx.data'

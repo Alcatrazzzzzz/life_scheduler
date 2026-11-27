@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
@@ -11,7 +12,12 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
     private readonly Tokenizer _tokenizer;
     private readonly LocalAiOptions _options;
     private readonly TimeProvider _time;
+    private readonly ILogger<OnnxLlmFunctionCaller>? _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private Generator? _generator;
+    private int _prefixLength;
+    private DateOnly _prefixDate;
+    private string? _prefixSchema;
 
     public OnnxLlmFunctionCaller(
         IOptions<LocalAiOptions> options,
@@ -30,6 +36,7 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
     {
         _options = options;
         _time = time;
+        _logger = logger;
 
         var path = LocalAiOptions.ResolvePath(contentRoot, options.OnnxModelPath);
 
@@ -75,44 +82,113 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
         await _gate.WaitAsync(ct);
         try
         {
-            var systemPrompt = BuildSystemPrompt(toolsSchema, _time.GetLocalNow());
+            var total = Stopwatch.StartNew();
+            var localNow = _time.GetLocalNow();
+            var today = DateOnly.FromDateTime(localNow.DateTime);
+            var systemPrompt = BuildSystemPrompt(toolsSchema, localNow);
             var responseSchema = BuildResponseSchema(toolsSchema);
-            var messages = JsonSerializer.Serialize(new[]
+
+            // Системная часть одинакова в пределах дня, поэтому генерируем её один раз
+            // и переиспользуем KV-кеш: на запрос остаётся префилл только хвоста с фразой.
+            var conversation = JsonSerializer.Serialize(new[]
             {
                 new { role = "system", content = systemPrompt },
                 new { role = "user", content = Sanitize(userText) },
             });
 
+            // Ровно тот блок, который chat template выдаёт для system-сообщения без tools.
+            // Проверка IsPrefix ниже отбрасывает кеш, если шаблон модели изменится.
+            var prefixPrompt = $"<|system|>{systemPrompt}<|end|>";
             var prompt = _tokenizer.ApplyChatTemplate(
                 string.Empty,
-                messages,
+                conversation,
                 string.Empty,
                 true);
 
-            using var parameters = new GeneratorParams(_model);
-            parameters.SetSearchOption("max_length", Math.Max(1024, _options.OnnxMaxLength));
-            parameters.SetGuidance("json_schema", responseSchema);
-
-            using var generator = new Generator(_model, parameters);
+            using var prefixSequences = _tokenizer.Encode(prefixPrompt);
             using var sequences = _tokenizer.Encode(prompt);
-            generator.AppendTokenSequences(sequences);
+
+            var prefixTokens = prefixSequences[0];
+            var promptTokens = sequences[0];
+            var reusable = IsPrefix(prefixTokens, promptTokens);
+
+            var cacheHit = reusable
+                           && _generator is not null
+                           && _prefixDate == today
+                           && _prefixLength == prefixTokens.Length
+                           && string.Equals(_prefixSchema, responseSchema, StringComparison.Ordinal);
+
+            var prefill = Stopwatch.StartNew();
+
+            if (!cacheHit)
+            {
+                ResetGenerator(
+                    reusable ? prefixPrompt : prompt,
+                    responseSchema,
+                    today,
+                    reusable ? prefixTokens.Length : 0);
+            }
+
+            if (reusable)
+            {
+                var generator = _generator!;
+                generator.RewindTo((ulong)_prefixLength);
+
+                if (promptTokens.Length > _prefixLength)
+                {
+                    generator.AppendTokens(promptTokens[_prefixLength..]);
+                }
+            }
+
+            prefill.Stop();
+
+            var active = _generator!;
+            var decode = Stopwatch.StartNew();
             using var stream = _tokenizer.CreateStream();
 
             var raw = new StringBuilder();
+            var generated = 0;
 
-            while (!generator.IsDone())
+            while (!active.IsDone())
             {
-                generator.GenerateNextToken();
+                active.GenerateNextToken();
 
-                if (generator.IsDone())
+                if (active.IsDone())
                 {
                     break;
                 }
 
-                raw.Append(stream.Decode(generator.GetNextTokens()[0]));
+                raw.Append(stream.Decode(active.GetNextTokens()[0]));
+                generated++;
             }
 
+            decode.Stop();
+            total.Stop();
+
+            _logger?.LogInformation(
+                "voice.metrics stage=llm cache={Cache} prompt_chars={PromptChars} " +
+                "prompt_tokens={PromptTokens} prefix_tokens={PrefixTokens} prefill_ms={PrefillMs} " +
+                "decode_ms={DecodeMs} gen_tokens={GenTokens} total_ms={TotalMs}",
+                cacheHit ? "hit" : "miss",
+                prompt.Length,
+                promptTokens.Length,
+                _prefixLength,
+                prefill.ElapsedMilliseconds,
+                decode.ElapsedMilliseconds,
+                generated,
+                total.ElapsedMilliseconds);
+
             return ParseToolCall(raw.ToString());
+        }
+        catch (LlmOutputException)
+        {
+            throw;
+        }
+        catch
+        {
+            _generator?.Dispose();
+            _generator = null;
+            throw;
         }
         finally
         {
@@ -120,8 +196,59 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
         }
     }
 
+    private void ResetGenerator(
+        string promptText,
+        string responseSchema,
+        DateOnly today,
+        int prefixLength)
+    {
+        _generator?.Dispose();
+        _generator = null;
+
+        using var parameters = new GeneratorParams(_model);
+        parameters.SetSearchOption("max_length", Math.Max(1024, _options.OnnxMaxLength));
+        parameters.SetGuidance("json_schema", responseSchema);
+
+        var generator = new Generator(_model, parameters);
+
+        try
+        {
+            using var sequences = _tokenizer.Encode(promptText);
+            generator.AppendTokenSequences(sequences);
+        }
+        catch
+        {
+            generator.Dispose();
+            throw;
+        }
+
+        _generator = generator;
+        _prefixLength = prefixLength;
+        _prefixDate = today;
+        _prefixSchema = responseSchema;
+    }
+
+    private static bool IsPrefix(ReadOnlySpan<int> prefix, ReadOnlySpan<int> tokens)
+    {
+        if (prefix.Length >= tokens.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < prefix.Length; i++)
+        {
+            if (prefix[i] != tokens[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public void Dispose()
     {
+        _generator?.Dispose();
         _tokenizer.Dispose();
         _model.Dispose();
         _gate.Dispose();
@@ -219,62 +346,42 @@ public sealed class OnnxLlmFunctionCaller : ILlmFunctionCaller, IDisposable
         var tomorrow = today.AddDays(1);
         var dayAfterTomorrow = today.AddDays(2);
         var yesterday = today.AddDays(-1);
-        var time = TimeOnly.FromDateTime(localNow.DateTime).ToString("HH:mm");
         var offset = localNow.Offset;
         var offsetText = (offset < TimeSpan.Zero ? "UTC-" : "UTC+") +
                          offset.Duration().ToString(@"hh\:mm");
 
         return $$$"""
-            Ты — локальный голосовой помощник планировщика задач. Ты получаешь одну фразу,
-            распознанную из речи, и обязан вернуть РОВНО ОДИН JSON-объект и ничего больше.
+            Ты — голосовой помощник планировщика. По одной распознанной фразе верни РОВНО ОДИН
+            JSON вида {"name":"<tool>","arguments":{...}}. Без markdown и текста вокруг.
 
-            Текущая дата: {{{today:yyyy-MM-dd}}} ({{{WeekdayRu(today.DayOfWeek)}}}).
-            Текущее локальное время: {{{time}}}.
-            Часовой пояс: {{{TimeZoneInfo.Local.Id}}} ({{{offsetText}}}).
+            Сейчас: {{{today:yyyy-MM-dd}}} ({{{WeekdayRu(today.DayOfWeek)}}}),
+            {{{TimeZoneInfo.Local.Id}}} ({{{offsetText}}}).
+            Относительные даты: сегодня={{{today:yyyy-MM-dd}}}, завтра={{{tomorrow:yyyy-MM-dd}}},
+            послезавтра={{{dayAfterTomorrow:yyyy-MM-dd}}}, вчера={{{yesterday:yyyy-MM-dd}}}.
 
-            Относительные даты считай от текущей даты:
-            «сегодня» = {{{today:yyyy-MM-dd}}}, «завтра» = {{{tomorrow:yyyy-MM-dd}}},
-            «послезавтра» = {{{dayAfterTomorrow:yyyy-MM-dd}}}, «вчера» = {{{yesterday:yyyy-MM-dd}}}.
-
-            Доступные инструменты (JSON-схемы):
+            Инструменты:
             {{{toolsSchema}}}
 
             Правила:
-            1. Ответ — только JSON вида {"name": "<tool>", "arguments": {...}}. Без markdown,
-               без пояснений, без текста до или после JSON.
-            2. Все ключи arguments обязательны. Если значение не названо — null.
-            3. Даты — только YYYY-MM-DD. Время — только HH:MM (24 часа).
-            4. Для habit_name и stack_after_title сохраняй название так, как его произнёс
-               пользователь. Не придумывай именительный падеж и не переводи.
-            5. create_habit: recurrence обязателен. Если периодичность не названа — "daily".
-               Для привычки «каждый день» — daily, «раз в неделю» — weekly.
-            6. log_habit: completed_at = null, если день не назван (помощник подставит сегодня).
-            7. list_habits: filter = "today" для «что на сегодня / что отметить»; иначе "all".
-            8. create_schedule: только разовое событие или встреча. Повторяющееся действие —
-               это create_habit.
-            9. Никогда не вызывай удаление, изменение или отметку события: таких инструментов нет.
-            10. Если фраза не является командой из списка, просит удалить/изменить данные или
-                ты не уверен в намерении — верни
-                {"name":"unsupported","arguments":{"reason":"<кратко по-русски>"}}.
+            1. В arguments всегда все ключи; неизвестное значение — null.
+            2. Даты только YYYY-MM-DD, время только HH:MM (24 часа).
+            3. habit_name и stack_after_title сохраняй как произнёс пользователь, не меняй падеж.
+            4. create_habit: recurrence не назван — "daily", «раз в неделю» — "weekly".
+            5. log_habit: completed_at = null, если день не назван.
+            6. list_habits: "today" для «что на сегодня / что отметить», "all" для «какие у меня
+               привычки» и остального.
+            7. create_schedule — только разовое событие; повторяющееся действие — create_habit.
+            8. Не выдумывай start, end, reward и notes: если не названо — null.
+            9. Удаление, изменение и отметка событий не поддерживаются. Если фраза не команда
+               из списка или намерение неясно —
+               {"name":"unsupported","arguments":{"reason":"<кратко по-русски>"}}.
 
             Примеры:
-            Пользователь: «Отметь планёрку»
-            Ответ: {"name":"log_habit","arguments":{"habit_name":"планёрку","completed_at":null}}
-
-            Пользователь: «Я сделал зарядку вчера»
-            Ответ: {"name":"log_habit","arguments":{"habit_name":"зарядку","completed_at":"{{{yesterday:yyyy-MM-dd}}}"}}
-
-            Пользователь: «Создай привычку читать каждый день»
-            Ответ: {"name":"create_habit","arguments":{"title":"Читать","recurrence":"daily","start":null,"end":null,"reward":null,"stack_after_title":null}}
-
-            Пользователь: «Что у меня на сегодня из привычек»
-            Ответ: {"name":"list_habits","arguments":{"filter":"today"}}
-
-            Пользователь: «Встреча с Аней завтра в 15:00 на час»
-            Ответ: {"name":"create_schedule","arguments":{"title":"Встреча с Аней","date":"{{{tomorrow:yyyy-MM-dd}}}","start":"15:00","end":"16:00","notes":null}}
-
-            Пользователь: «Удали привычку зарядка»
-            Ответ: {"name":"unsupported","arguments":{"reason":"удаление не поддерживается"}}
+            «Отметь планёрку» → {"name":"log_habit","arguments":{"habit_name":"планёрку","completed_at":null}}
+            «Я сделал зарядку вчера» → {"name":"log_habit","arguments":{"habit_name":"зарядку","completed_at":"{{{yesterday:yyyy-MM-dd}}}"}}
+            «Создай привычку читать каждый день» → {"name":"create_habit","arguments":{"title":"Читать","recurrence":"daily","start":null,"end":null,"reward":null,"stack_after_title":null}}
+            «Встреча с Аней завтра в 15:00 на час» → {"name":"create_schedule","arguments":{"title":"Встреча с Аней","date":"{{{tomorrow:yyyy-MM-dd}}}","start":"15:00","end":"16:00","notes":null}}
+            «Удали привычку зарядка» → {"name":"unsupported","arguments":{"reason":"удаление не поддерживается"}}
             """;
     }
 

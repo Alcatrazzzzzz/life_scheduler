@@ -5,7 +5,7 @@ public sealed class LocalAiOptions
     public const string SectionName = "LocalAi";
 
     public bool Enabled { get; set; } = true;
-    public string WhisperModelPath { get; set; } = "models/ggml-medium.bin";
+    public string WhisperModelPath { get; set; } = "models/ggml-small-q8_0.bin";
     public string OnnxModelPath { get; set; } = "models/phi-4-mini-onnx-cpu-int4";
     public string WhisperLanguage { get; set; } = "ru";
     public int WhisperThreads { get; set; }

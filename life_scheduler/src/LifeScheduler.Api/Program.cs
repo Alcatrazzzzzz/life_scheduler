@@ -55,7 +55,7 @@ catch (Exception ex)
 {
     app.Logger.LogCritical(
         ex,
-        "Локальные AI-модели не загрузились. Положите ggml-medium.bin и папку " +
+        "Локальные AI-модели не загрузились. Положите ggml-модель Whisper и папку " +
         "phi-4-mini-onnx-cpu-int4 в src/LifeScheduler.Api/models/ и см. README.md.");
     Environment.ExitCode = 1;
     return;
