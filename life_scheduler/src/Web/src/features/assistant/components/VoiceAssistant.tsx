@@ -1,5 +1,8 @@
 import { Mic, Square, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { isEditableTarget, isShortcutKey, matchesShortcut } from '../../settings/shortcut'
+import type { VoiceShortcutSetting } from '../../settings/api'
+import { useVoiceShortcut } from '../../settings/queries'
 import type { AssistantResponse } from '../api'
 import { useProcessCommand } from '../queries'
 import '../assistant.css'
@@ -43,6 +46,7 @@ export function VoiceAssistant() {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<AssistantState>({ phase: 'idle' })
   const { mutateAsync } = useProcessCommand()
+  const shortcut = useVoiceShortcut()
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -51,6 +55,11 @@ export function VoiceAssistant() {
   const startedAtRef = useRef(0)
   const cancelledRef = useRef(false)
   const mountedRef = useRef(true)
+  const phaseRef = useRef<AssistantState['phase']>('idle')
+  const shortcutRef = useRef<VoiceShortcutSetting | null>(null)
+  const holdTimerRef = useRef<number | null>(null)
+  const holdPressedRef = useRef(false)
+  const holdRecordingRef = useRef(false)
 
   const stopTracks = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
@@ -81,6 +90,14 @@ export function VoiceAssistant() {
       stopTracks()
     }
   }, [clearTimer, stopTracks])
+
+  useEffect(() => {
+    phaseRef.current = state.phase
+  }, [state.phase])
+
+  useEffect(() => {
+    shortcutRef.current = shortcut.data ?? null
+  }, [shortcut.data])
 
   const submit = useCallback(
     async (blob: Blob) => {
@@ -208,6 +225,89 @@ export function VoiceAssistant() {
     clearTimer()
     setState({ phase: 'idle' })
   }, [clearTimer, stopTracks])
+
+  useEffect(() => {
+    function clearHoldTimer() {
+      if (holdTimerRef.current !== null) {
+        window.clearTimeout(holdTimerRef.current)
+        holdTimerRef.current = null
+      }
+    }
+
+    function releaseHold() {
+      holdPressedRef.current = false
+      clearHoldTimer()
+
+      if (holdRecordingRef.current) {
+        holdRecordingRef.current = false
+        stopRecording()
+      }
+    }
+
+    function onKeyDown(event: globalThis.KeyboardEvent) {
+      const config = shortcutRef.current
+
+      if (!config || event.repeat) return
+      if (document.querySelector('dialog[open]')) return
+      if (isEditableTarget(event.target)) return
+      if (!matchesShortcut(event, config.combo)) return
+
+      const phase = phaseRef.current
+      event.preventDefault()
+
+      if (config.mode === 'toggle') {
+        if (phase === 'recording') {
+          stopRecording()
+          return
+        }
+
+        if (phase === 'idle' || phase === 'result' || phase === 'error') {
+          setOpen(true)
+          void startRecording()
+        }
+
+        return
+      }
+
+      if (phase !== 'idle' && phase !== 'result' && phase !== 'error') return
+
+      holdPressedRef.current = true
+      holdTimerRef.current = window.setTimeout(() => {
+        holdTimerRef.current = null
+
+        if (!holdPressedRef.current) return
+
+        holdRecordingRef.current = true
+        setOpen(true)
+        void startRecording()
+      }, config.holdDelayMs)
+    }
+
+    function onKeyUp(event: globalThis.KeyboardEvent) {
+      const config = shortcutRef.current
+
+      if (!config || config.mode !== 'hold') return
+      if (!holdPressedRef.current) return
+      if (!isShortcutKey(event, config.combo)) return
+
+      releaseHold()
+    }
+
+    function onBlur() {
+      releaseHold()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
+      clearHoldTimer()
+    }
+  }, [startRecording, stopRecording])
 
   const close = useCallback(() => {
     if (state.phase === 'recording') {

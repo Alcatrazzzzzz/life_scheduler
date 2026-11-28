@@ -1,0 +1,82 @@
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-field__label {
+  font-size: var(--font-meta-size);
+  font-weight: var(--font-weight-control);
+  color: var(--color-text-secondary);
+}
+
+.settings-shortcut {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-field-size);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+  transition:
+    border-color var(--duration-base) var(--ease-standard),
+    background-color var(--duration-base) var(--ease-standard);
+}
+
+.settings-shortcut:hover {
+  border-color: var(--color-text-muted);
+}
+
+.settings-shortcut.is-capturing {
+  color: var(--color-text-secondary);
+  border-color: var(--color-accent);
+}
+
+.settings-number {
+  min-height: var(--control-height);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-field-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  background: var(--color-surface-input);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-control-sm);
+}
+
+.settings-number:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+/* Подсказки должны читаться и в тёмной теме — берём вторичный текст, не muted. */
+.settings-hint {
+  margin: 0;
+  font-size: var(--font-meta-size);
+  color: var(--color-text-secondary);
+}
+
+.settings-error {
+  margin: 0;
+  font-size: var(--font-meta-size);
+  color: var(--color-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-shortcut {
+    transition: none;
+  }
+}

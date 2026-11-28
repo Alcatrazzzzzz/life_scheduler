@@ -1,3 +1,4 @@
+using LifeScheduler.Api.Features.Settings;
 using Microsoft.EntityFrameworkCore;
 
 namespace LifeScheduler.Api.Shared.Data;
@@ -8,6 +9,7 @@ public sealed class LifeSchedulerDbContext(DbContextOptions<LifeSchedulerDbConte
     public DbSet<ScheduleEntry> Schedules => Set<ScheduleEntry>();
     public DbSet<ScheduleOccurrenceCompletion> OccurrenceCompletions =>
         Set<ScheduleOccurrenceCompletion>();
+    public DbSet<AppSetting> Settings => Set<AppSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

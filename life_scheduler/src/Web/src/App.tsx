@@ -1,10 +1,11 @@
 import { useEffect, useState, type MouseEvent } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Settings as SettingsIcon } from 'lucide-react'
 import { ThemeToggle } from './components/ThemeToggle'
 import { VoiceAssistant } from './features/assistant/components/VoiceAssistant'
 import { HabitsPage } from './features/habits/HabitsPage'
 import { SchedulePage } from './features/schedule/SchedulePage'
+import { SettingsDialog } from './features/settings/SettingsDialog'
 
 const queryClient = new QueryClient()
 
@@ -18,6 +19,7 @@ function readSection(): Section {
 
 function App() {
   const [section, setSection] = useState<Section>(readSection)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
     const handlePopState = () => setSection(readSection())
@@ -60,11 +62,21 @@ function App() {
           </a>
         </nav>
         <div className="app-header__actions">
+          <button
+            type="button"
+            className="btn btn--ghost btn--icon"
+            aria-label="Настройки"
+            title="Настройки"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <SettingsIcon size={16} strokeWidth={1.5} aria-hidden="true" />
+          </button>
           <ThemeToggle />
         </div>
       </header>
       {section === 'calendar' ? <SchedulePage /> : <HabitsPage />}
       <VoiceAssistant />
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </QueryClientProvider>
   )
 }

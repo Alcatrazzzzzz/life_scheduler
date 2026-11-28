@@ -5,6 +5,7 @@ using LifeScheduler.Api.Features.Completion;
 using LifeScheduler.Api.Features.Habits;
 using LifeScheduler.Api.Features.History;
 using LifeScheduler.Api.Features.Schedule;
+using LifeScheduler.Api.Features.Settings;
 using LifeScheduler.Api.Features.VoiceAssistant;
 using LifeScheduler.Api.Shared.Data;
 using LifeScheduler.Api.Shared.LocalAi;
@@ -43,6 +44,7 @@ app.MapHistoryEndpoints();
 app.MapCompletionEndpoints();
 app.MapHabitEndpoints();
 app.MapVoiceAssistantEndpoints();
+app.MapSettingsEndpoints();
 
 if (app.Environment.IsDevelopment() && app.Configuration.UsesLocalStorage())
     app.MapLocalStorageEndpoints();
